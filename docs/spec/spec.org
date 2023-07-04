@@ -1,0 +1,48 @@
+#+title: Fast Water Simulation using the Pipe Method
+#+author: Sebastian Willenbrink
+
+* Overview
+Simulating water in realtime is challenging. Most games tend to simplify the simulation substantially by making the physical part completely or mostly static. I want to implement a method that allows water to flow from A to B, realistically simulate waves and, possibly, allow two-way interaction between rigid bodies and water.
+
+This problem contrasts to the more well-known wavesimulations without moving water for e.g. oceans which has been widely used in many games of all kinds. Best known (and a previous project in the course) is the FFT approach by Tessendorf. To avoid doing the same project again and because it fits my interests better I chose an approach that supports interacting with rigid bodies.
+
+* Research
+The work is based on "Fast Water Simulation Methods for Games"[fn:: https://dl.acm.org/doi/pdf/10.1145/2700533]. This paper bases its implementation in turn on "Fast Hydraulic Erosion Simulation and Visualization on GPU"[fn:: https://data.exppad.com/public/papers/Fast%20Hydraulic%20Erosion%20Simulation%20and%20Visualization%20on%20GPU.pdf].
+
+This technique hasn't been widely used yet, one reference claimed two large 3D games using simulated water as part of the core gameplay loop: From Dust and Cities: Skylines. The pipe method is also quite similar to the fluid simulation in Factorio, although the details are quite different.[fn:: https://www.factorio.com/blog/post/fff-274]
+
+* Implementation Plan
+- A basic noise based terrain
+
+  This shows that I'm familiar enough with shaders, engine etc. to work on this project. Already done.
+- Very basic pipe method
+
+  In essence, each cell is connected via "pipes" to each neighbour. Equalising the height between them should be mostly trivial if we disregard velocity and other details. Rendering this might be slightly more challenging but should easily work too.
+- The full pipe method with demo
+
+  This includes all the details mentioned in the papers. E.g. velocity, fine tuning the parameters etc. This should be a visually pleasing result with a demo.
+- Water -> rigid body interaction, i.e. bouyancy
+
+  Hopefully simple. This will likely require reading GPU data from the CPU and I haven't done this before. Potentially problematic due to synchronisation issues.
+- Potential further goals
+
+  + Water <- rigid body interaction, i.e. blocking flow
+
+      As this will probably be quite difficult I might not finish this.
+  + Multilayered pipe method to simulate submerged bodies
+  + Adaptive grids for e.g. coasts
+  + Wind, for e.g. waves on the ocean
+  + Erosion
+
+* Tools
+ I want to implement this in Godot. This open source engine might be best described as a Unity competitor and is surprisingly capable and I'm interested in learning more about it. I believe this choice will at most cause minor issues due to e.g. undocumented APIs or unimplemented features. As far as I have seen is programming shaders in Godot quite seamless with features like hot reloads, error messages etc. I have not tested compute shaders yet but looking at the documentation they seem similarly well supported.
+
+ The programming languages will for the most part be Godots custom languages. The shader language is very similar to GLSL, the programming language is Python-like (though the implementation is quite different). C# is another option but I will most likely stick to GDscript.
+
+* Grading
+ I'm not sure how this project would be graded. I will probably not have much time in the end of August and I'm not sure when I will get feedback on the specification and how much time I will be able to invest into this project after that point. My current plan is to start working on this project now (as it interests me anyway and I also assume the project, with minor changes, will be accepted).
+
+ Is it correct to assume that the grades will approximately be distributed as follows? Obviously, assuming that the report covers everything.
+- Passing for a basic pipe method
+- B for the full pipe method
+- A for anything beyond that, e.g. bouyancy

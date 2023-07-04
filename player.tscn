@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://bnb0pv6w5eu5c"]
+
+[ext_resource type="Script" path="res://player.gd" id="1_yc1sg"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_lu6pk"]
+size = Vector3(1, 2, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_d5ib7"]
+size = Vector3(1, 1, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_chxxe"]
+size = Vector3(1, 2, 1)
+
+[node name="Player" type="RigidBody3D"]
+script = ExtResource("1_yc1sg")
+
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="."]
+
+[node name="CSGMesh3D" type="CSGMesh3D" parent="CSGCombiner3D"]
+mesh = SubResource("BoxMesh_lu6pk")
+
+[node name="CSGMesh3D2" type="CSGMesh3D" parent="CSGCombiner3D"]
+transform = Transform3D(-4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("PrismMesh_d5ib7")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_chxxe")

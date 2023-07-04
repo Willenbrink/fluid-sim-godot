@@ -1,0 +1,39 @@
+[gd_scene load_steps=7 format=3 uid="uid://qlmh4im4lm3e"]
+
+[ext_resource type="PackedScene" uid="uid://bnb0pv6w5eu5c" path="res://player.tscn" id="1_ac2d2"]
+[ext_resource type="PackedScene" uid="uid://bbmsdtcxce2yg" path="res://camera.tscn" id="2_o2117"]
+[ext_resource type="Script" path="res://camera.gd" id="3_qdbu2"]
+[ext_resource type="Shader" path="res://ocean_heightmap.gdshader" id="4_e0p4l"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u0pqp"]
+render_priority = 0
+shader = ExtResource("4_e0p4l")
+shader_parameter/dist_vertices = 0.125
+shader_parameter/amplitude = 4.0
+shader_parameter/frequency = 0.125
+shader_parameter/direction = Vector2(1, 0.3)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_nm2xy"]
+material = SubResource("ShaderMaterial_u0pqp")
+size = Vector2(64, 64)
+subdivide_width = 256
+subdivide_depth = 256
+
+[node name="Main" type="Node3D"]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.0794594, 0.862373, -0.5, -0.612373, 0.353554, 0.707106, 0.786566, 0.362373, 0.5, -0.18211, 4.0712, 0.141829)
+shadow_enabled = true
+
+[node name="Player" parent="." instance=ExtResource("1_ac2d2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6779, 0)
+gravity_scale = 0.0
+
+[node name="CameraPivot" parent="Player" instance=ExtResource("2_o2117")]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, -2, 0)
+script = ExtResource("3_qdbu2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_nm2xy")
+
+[editable path="Player/CameraPivot"]

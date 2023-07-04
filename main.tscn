@@ -1,17 +1,27 @@
-[gd_scene load_steps=7 format=3 uid="uid://qlmh4im4lm3e"]
+[gd_scene load_steps=12 format=3 uid="uid://qlmh4im4lm3e"]
 
 [ext_resource type="PackedScene" uid="uid://bnb0pv6w5eu5c" path="res://player.tscn" id="1_ac2d2"]
 [ext_resource type="PackedScene" uid="uid://bbmsdtcxce2yg" path="res://camera.tscn" id="2_o2117"]
 [ext_resource type="Script" path="res://camera.gd" id="3_qdbu2"]
-[ext_resource type="Shader" path="res://ocean_heightmap.gdshader" id="4_e0p4l"]
+[ext_resource type="PackedScene" uid="uid://cw3x5a2ooeid" path="res://perlin_noise.tscn" id="4_mjjr5"]
+[ext_resource type="Shader" path="res://simplePipes.gdshader" id="5_tvsbo"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_0murg"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_v2tta"]
+noise = SubResource("FastNoiseLite_0murg")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wp78o"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_8a3hw"]
+as_normal_map = true
+noise = SubResource("FastNoiseLite_wp78o")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_u0pqp"]
 render_priority = 0
-shader = ExtResource("4_e0p4l")
-shader_parameter/dist_vertices = 0.125
-shader_parameter/amplitude = 4.0
-shader_parameter/frequency = 0.125
-shader_parameter/direction = Vector2(1, 0.3)
+shader = ExtResource("5_tvsbo")
+shader_parameter/noise = SubResource("NoiseTexture2D_v2tta")
+shader_parameter/normalmap = SubResource("NoiseTexture2D_8a3hw")
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_nm2xy"]
 material = SubResource("ShaderMaterial_u0pqp")
@@ -33,7 +43,9 @@ gravity_scale = 0.0
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, -2, 0)
 script = ExtResource("3_qdbu2")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="PerlinNoise" parent="." instance=ExtResource("4_mjjr5")]
+
+[node name="SimplePipes" type="MeshInstance3D" parent="."]
 mesh = SubResource("PlaneMesh_nm2xy")
 
 [editable path="Player/CameraPivot"]

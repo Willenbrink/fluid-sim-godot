@@ -1,12 +1,11 @@
-[gd_scene load_steps=20 format=3 uid="uid://qlmh4im4lm3e"]
+[gd_scene load_steps=13 format=3 uid="uid://qlmh4im4lm3e"]
 
 [ext_resource type="PackedScene" uid="uid://bnb0pv6w5eu5c" path="res://player.tscn" id="1_ac2d2"]
 [ext_resource type="PackedScene" uid="uid://bbmsdtcxce2yg" path="res://camera.tscn" id="2_o2117"]
 [ext_resource type="Script" path="res://camera.gd" id="3_qdbu2"]
-[ext_resource type="PackedScene" uid="uid://cw3x5a2ooeid" path="res://perlin_noise.tscn" id="4_mjjr5"]
+[ext_resource type="Texture2D" uid="uid://bj6ulruu1udmp" path="res://gameoflife.jpg" id="5_r2a1f"]
 [ext_resource type="Shader" path="res://simplePipes.gdshader" id="5_tvsbo"]
-[ext_resource type="Shader" path="res://colorrect.gdshader" id="6_ri0it"]
-[ext_resource type="Shader" path="res://heightMap.gdshader" id="7_50y65"]
+[ext_resource type="Script" path="res://gol.gd" id="8_go0l5"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_0murg"]
 
@@ -31,31 +30,6 @@ size = Vector2(64, 64)
 subdivide_width = 256
 subdivide_depth = 256
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_5glpb"]
-viewport_path = NodePath("FluidSim")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_rau3y"]
-resource_local_to_scene = true
-render_priority = 0
-shader = ExtResource("7_50y65")
-shader_parameter/heightmap = SubResource("ViewportTexture_5glpb")
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_5at5l"]
-size = Vector2(64, 64)
-subdivide_width = 256
-subdivide_depth = 256
-
-[sub_resource type="Gradient" id="Gradient_vsqie"]
-offsets = PackedFloat32Array(0, 0.0292683)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_75c58"]
-gradient = SubResource("Gradient_vsqie")
-fill_from = Vector2(0.984, 0)
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_rirgq"]
-shader = ExtResource("6_ri0it")
-shader_parameter/water_texture = SubResource("GradientTexture2D_75c58")
-
 [node name="Main" type="Node3D"]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
@@ -70,35 +44,14 @@ gravity_scale = 0.0
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, -2, 0)
 script = ExtResource("3_qdbu2")
 
-[node name="PerlinNoise" parent="." instance=ExtResource("4_mjjr5")]
-
 [node name="SimplePipes" type="MeshInstance3D" parent="."]
 visible = false
 mesh = SubResource("PlaneMesh_nm2xy")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-material_override = SubResource("ShaderMaterial_rau3y")
-mesh = SubResource("PlaneMesh_5at5l")
-
-[node name="FluidSim" type="SubViewport" parent="."]
-disable_3d = true
-size = Vector2i(64, 64)
-render_target_clear_mode = 1
-render_target_update_mode = 4
-
-[node name="ColorRect2" type="ColorRect" parent="FluidSim"]
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="TextureRect" type="TextureRect" parent="."]
 offset_right = 40.0
 offset_bottom = 40.0
-color = Color(0.219608, 0.780392, 0, 0.184314)
-
-[node name="ColorRect" type="ColorRect" parent="FluidSim"]
-material = SubResource("ShaderMaterial_rirgq")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+texture = ExtResource("5_r2a1f")
+script = ExtResource("8_go0l5")
 
 [editable path="Player/CameraPivot"]

@@ -24,21 +24,22 @@ vec4 flux(ivec2 cell_idx) {
     return imageLoad(flux_in, cell_idx);
 }
 
-float calc_height(ivec2 pos) {
+vec4 calc_flux(ivec2 pos) {
     ivec2 dir = ivec2(1, 0);
 
-    float flux_incoming =
-          flux(pos - dir).g
-        + flux(pos + dir).r
-        + flux(pos - dir.yx).a
-        + flux(pos + dir.yx).b;
-    float flux_outgoing = flux(pos).r + flux(pos).g + flux(pos).b + flux(pos).a;
-    return height(pos) + flux_incoming - flux_outgoing;
+    // TODO some constant? delta t * cross section * gravity / length
+    float c = 0.01;
+    return vec4(
+        max(0.0, flux(pos).r + c * (height(pos) - height(pos - dir))),
+        max(0.0, flux(pos).g + c * (height(pos) - height(pos + dir))),
+        max(0.0, flux(pos).b + c * (height(pos) - height(pos - dir.yx))),
+        max(0.0, flux(pos).a + c * (height(pos) - height(pos + dir.yx)))
+        );
 }
 
 void main() {
   ivec2 gidx = ivec2(gl_GlobalInvocationID.xy);
-  float height_new = calc_height(gidx);
-  imageStore(map_out, gidx, vec4(height_new, 0.0, 0.0, 1.0));
-  // imageStore(map_out, gidx, vec4(0.0, 1.0, 0.0, 1.0));
+  vec4 flux_new = calc_flux(gidx);
+  imageStore(flux_out, gidx, flux_new);
+  // imageStore(flux_out, gidx, vec4(0.0,1.0,0.0,1.0));
 }

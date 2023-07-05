@@ -17,7 +17,7 @@ extends TextureRect
 		
 
 var rd: RenderingDevice
-var shader_file: RDShaderFile = preload("res://gol.glsl")
+var shader_file: RDShaderFile = preload("res://fluidsim/shader/gol.glsl")
 var shader: RID
 var texture_read: RID
 var texture_write: RID

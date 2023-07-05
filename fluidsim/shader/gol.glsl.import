@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://b0hsdb8xvh6c7"
+path="res://.godot/imported/gol.glsl-c8a12f012b29dc8f4de0791890a4a2fa.res"
+
+[deps]
+
+source_file="res://fluidsim/shader/gol.glsl"
+dest_files=["res://.godot/imported/gol.glsl-c8a12f012b29dc8f4de0791890a4a2fa.res"]
+
+[params]
+

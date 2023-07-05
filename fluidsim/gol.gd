@@ -5,19 +5,20 @@ extends TextureRect
 @export var reset : bool :
 	get: return false
 	set(value):
-		##init();
-		pass;
+		texture = tex_init
+		var og_image := texture.get_image()
+		og_image.convert(image_format)
+		read_data = og_image.get_data();
 	
 @export var tex_init: Texture2D:
 	get:
 		return tex_init
 	set(value):
 		tex_init = value;
-		#init();
 		
 
 var rd: RenderingDevice
-var shader_file: RDShaderFile = preload("res://fluidsim/shader/gol.glsl")
+var shader_file: RDShaderFile = preload("res://fluidsim/shader/pipes.glsl")
 var shader: RID
 var texture_read: RID
 var texture_write: RID

@@ -2,6 +2,7 @@
 extends TextureRect
 
 @export var run_in_editor = false;
+@export var show_flux = false;
 @export var reset : bool :
 	get: return false
 	set(_value):
@@ -190,5 +191,9 @@ func compute() -> void:
 	# Now we can grab our data from the texture
 	read_data_height = rd.texture_get_data(texture_write_height, 0)
 	read_data_flux = rd.texture_get_data(texture_write_flux, 0)
-	var image := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
-	texture = ImageTexture.create_from_image(image)
+	var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
+	var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_flux)
+	if show_flux:
+		texture = ImageTexture.create_from_image(image_flux)
+	else:
+		texture = ImageTexture.create_from_image(image_height)

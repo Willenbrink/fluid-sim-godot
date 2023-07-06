@@ -16,6 +16,9 @@ layout(set = 0, binding = 2, rgba32f) uniform image2D map_out;
 layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
+const float length = 10.0;
+const float dt = 1.0;
+
 float height(ivec2 cell_idx) {
     return imageLoad(map_in, cell_idx).x;
 }
@@ -28,8 +31,10 @@ vec4 calc_flux(ivec2 pos) {
     ivec2 dir = ivec2(1, 0);
 
     // TODO some constant? delta t * cross section * gravity / length
-    float c = 0.01;
-    return vec4(
+    float c = dt * 1.0 / length;
+    float K = min(1, height(pos) * length * length
+                  / ( dt * ( flux(pos).r + flux(pos).g + flux(pos).b + flux(pos).a )));
+    return K * vec4(
         max(0.0, flux(pos).r + c * (height(pos) - height(pos - dir))),
         max(0.0, flux(pos).g + c * (height(pos) - height(pos + dir))),
         max(0.0, flux(pos).b + c * (height(pos) - height(pos - dir.yx))),

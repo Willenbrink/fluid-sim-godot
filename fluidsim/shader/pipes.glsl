@@ -16,6 +16,9 @@ layout(set = 0, binding = 2, rgba32f) uniform image2D map_out;
 layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
+const float length = 10.0;
+const float dt = 1.0;
+
 float height(ivec2 cell_idx) {
     return imageLoad(map_in, cell_idx).x;
 }
@@ -33,7 +36,7 @@ float calc_height(ivec2 pos) {
         + flux(pos - dir.yx).a
         + flux(pos + dir.yx).b;
     float flux_outgoing = flux(pos).r + flux(pos).g + flux(pos).b + flux(pos).a;
-    return height(pos) + flux_incoming - flux_outgoing;
+    return height(pos) + dt * (flux_incoming - flux_outgoing) / (length * length);
 }
 
 void main() {

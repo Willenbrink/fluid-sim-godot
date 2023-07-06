@@ -1,6 +1,6 @@
 #[compute]
 #version 450
-layout(local_size_x = 8, local_size_y = 8) in;
+// layout(local_size_x = 8, local_size_y = 8) in;
 
 // R - Heightmap
 // G
@@ -17,13 +17,31 @@ layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
 const float length = 10.0;
-const float dt = 1.0;
+const float dt = 0.1;
 
 float height(ivec2 cell_idx) {
+    ivec2 size = imageSize(map_in);
+    if(cell_idx.x < 0)
+        return imageLoad(map_in, cell_idx + ivec2(1,0)).x;
+    if(cell_idx.y < 0)
+        return imageLoad(map_in, cell_idx + ivec2(0,1)).x;
+    if(cell_idx.x >= size.x)
+        return imageLoad(map_in, cell_idx - ivec2(1,0)).x;
+    if(cell_idx.y >= size.y)
+        return imageLoad(map_in, cell_idx - ivec2(0,1)).x;
     return imageLoad(map_in, cell_idx).x;
 }
 
 vec4 flux(ivec2 cell_idx) {
+    ivec2 size = imageSize(flux_in);
+    if(cell_idx.x < 0)
+        return imageLoad(flux_in, cell_idx + ivec2(1,0));
+    if(cell_idx.y < 0)
+        return imageLoad(flux_in, cell_idx + ivec2(0,1));
+    if(cell_idx.x >= size.x)
+        return imageLoad(flux_in, cell_idx - ivec2(1,0));
+    if(cell_idx.y >= size.y)
+        return imageLoad(flux_in, cell_idx - ivec2(0,1));
     return imageLoad(flux_in, cell_idx);
 }
 

@@ -54,7 +54,7 @@ float calc_height(ivec2 pos) {
         + flux(pos - dir.yx).a
         + flux(pos + dir.yx).b;
     float flux_outgoing = flux(pos).r + flux(pos).g + flux(pos).b + flux(pos).a;
-    return height(pos) + dt * (flux_incoming - flux_outgoing) / (length * length);
+    return max(0, height(pos) + dt * (flux_incoming - flux_outgoing) / (length * length));
 }
 
 void main() {

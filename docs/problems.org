@@ -1,0 +1,8 @@
+#+title: Problems I encountered
+
+* Using output of shader as input
+Attempt: Viewport texture
+Solution: Compute shaders
+
+* Use two textures for everything
+That means 8 8-bit colors per pixel. Height + 4 flux directions causes problems. 8 bit is not enough for a float!

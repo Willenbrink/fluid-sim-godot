@@ -7,29 +7,7 @@ extends TextureRect
 	get: return false
 	set(_value):
 		reset = false
-		texture = tex_height_init
-		tex_flux = tex_flux_init
-		var og_image := texture.get_image()
-		og_image.convert(image_format)
-		read_data_height = og_image.get_data();
-		
-		var flux_image := tex_flux.get_image()
-		flux_image.convert(image_format)
-		read_data_flux = flux_image.get_data()
-	
-@export var tex_height_init: Texture2D:
-	get:
-		return tex_height_init
-	set(value):
-		tex_height_init = value;
-
-@export var tex_flux_init: Texture2D:
-	get:
-		return tex_flux_init
-	set(value):
-		tex_flux_init = value;
-		
-@export var tex_flux : Texture2D;
+		init()
 
 var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://fluidsim/shader/flux.glsl")
@@ -54,21 +32,23 @@ var write_data_height: PackedByteArray
 var read_data_flux: PackedByteArray
 var write_data_flux: PackedByteArray
 
-var image_size: Vector2i
-var image_format := Image.FORMAT_RGBA8
-
+@export var image_size: Vector2i
+@export var use_noise = false
+@export var noise: Texture2D
+# Keep those in sync!
+var image_format := Image.FORMAT_RGBAF
+var data_format := RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
 
 func _ready() -> void:
-	init()
-	
-func init() -> void:
 	# We will be using our own RenderingDevice to handle the compute commands
 	rd = RenderingServer.create_local_rendering_device()
 	if not rd:
 		set_process(false)
 		print("Compute shaders are not available")
 		return
-
+	init()
+	
+func init() -> void:
 	# Create shader and pipeline
 	var height_spirv := height_shader_file.get_spirv()
 	shader_height = rd.shader_create_from_spirv(height_spirv)
@@ -78,26 +58,34 @@ func init() -> void:
 	shader_flux = rd.shader_create_from_spirv(flux_spirv)
 	pipeline_flux = rd.compute_pipeline_create(shader_flux)
 	
-	
-	var og_image := texture.get_image()
-	og_image.convert(image_format)
 	# Data for compute shaders has to come as an array of bytes
-	# Initialize read data
-	read_data_height = og_image.get_data()
+	var image_height := Image.create(image_size.x, image_size.y, false, image_format)
+	if use_noise:
+		var og_image := noise.get_image()
+		og_image.decompress()
+		for i in image_size.x:
+			for j in image_size.y:
+				image_height.set_pixel(i, j, og_image.get_pixel(i, j))
+	else:
+		for i in image_size.x:
+			for j in image_size.y:
+				var upper = image_size.x / 2 * 1.1
+				var lower = image_size.x / 2 * 0.9
+				#if i > lower && i < upper && j > lower && j < upper:
+				if i > 220 && i < 260 && j > 220 && j < 260:
+					image_height.set_pixel(i, j, Color.RED)
+					image_height.set_pixel(i, j, Color.RED)
+	read_data_height = image_height.get_data()
 	
-	var flux_image := tex_flux.get_image()
-	flux_image.convert(image_format)
-	read_data_flux = flux_image.get_data()
-	
-	image_size = og_image.get_size()
-	assert(image_size == flux_image.get_size())
+	var image_flux := Image.create(image_size.x, image_size.y, false, image_format)
+	read_data_flux = image_flux.get_data()
 	
 
 	var tex_read_format := RDTextureFormat.new()
 	tex_read_format.width = image_size.x
 	tex_read_format.height = image_size.y
 	tex_read_format.depth = 4
-	tex_read_format.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM
+	tex_read_format.format = data_format
 	tex_read_format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
@@ -108,7 +96,6 @@ func init() -> void:
 	var tex_view_flux := RDTextureView.new()
 	texture_read_flux = rd.texture_create(tex_read_format, tex_view_flux, [read_data_flux])
 	
-
 	# Create uniform set using the read texture
 	var read_uniform_height := RDUniform.new()
 	read_uniform_height.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
@@ -120,7 +107,6 @@ func init() -> void:
 	read_uniform_flux.binding = 1
 	read_uniform_flux.add_id(texture_read_flux)
 	
-
 	# Initialize write data
 	write_data_height = PackedByteArray()
 	write_data_height.resize(read_data_height.size())
@@ -133,7 +119,7 @@ func init() -> void:
 	tex_write_format.width = image_size.x
 	tex_write_format.height = image_size.y
 	tex_write_format.depth = 4
-	tex_write_format.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM
+	tex_write_format.format = data_format
 	tex_write_format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
@@ -159,6 +145,12 @@ func init() -> void:
 	uniform_set_flux = rd.uniform_set_create(
 		[read_uniform_height, write_uniform_height, read_uniform_flux, write_uniform_flux],
 		shader_flux, 0)
+		
+# func _exit_tree() -> void:
+# 	free()
+	
+func free() -> void:
+	pass
 
 func _process(_delta: float) -> void:
 	if (not Engine.is_editor_hint() || run_in_editor):

@@ -17,7 +17,7 @@ layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
 const float length = 10.0;
-const float dt = 0.1;
+const float dt = 1.0;
 
 float height(ivec2 cell_idx) {
     ivec2 size = imageSize(map_in);

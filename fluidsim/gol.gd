@@ -3,6 +3,7 @@ extends TextureRect
 
 @export var run_in_editor = false;
 @export var show_flux = false;
+@export var update_texture = false;
 @export var reset : bool :
 	get: return false
 	set(_value):
@@ -71,10 +72,13 @@ func init() -> void:
 			for j in image_size.y:
 				var upper = image_size.x / 2 * 1.1
 				var lower = image_size.x / 2 * 0.9
-				#if i > lower && i < upper && j > lower && j < upper:
-				if i > 220 && i < 260 && j > 220 && j < 260:
+				if i > lower && i < upper && j > lower && j < upper:
+				#if i > 220 && i < 260 && j > 220 && j < 260:
 					image_height.set_pixel(i, j, Color.RED)
 					image_height.set_pixel(i, j, Color.RED)
+		image_height.set_pixel(0, 0, Color.RED)
+		image_height.set_pixel(1, 0, Color.BLACK)
+		
 	read_data_height = image_height.get_data()
 	
 	var image_flux := Image.create(image_size.x, image_size.y, false, image_format)
@@ -183,9 +187,11 @@ func compute() -> void:
 	# Now we can grab our data from the texture
 	read_data_height = rd.texture_get_data(texture_write_height, 0)
 	read_data_flux = rd.texture_get_data(texture_write_flux, 0)
-	var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
-	var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_flux)
-	if show_flux:
-		texture = ImageTexture.create_from_image(image_flux)
-	else:
-		texture = ImageTexture.create_from_image(image_height)
+		
+	if update_texture:
+		var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
+		var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_flux)
+		if show_flux:
+			texture = ImageTexture.create_from_image(image_flux)
+		else:
+			texture = ImageTexture.create_from_image(image_height)

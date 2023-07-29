@@ -6,6 +6,9 @@ The work is primarily based on:
 - https://data.exppad.com/public/papers/Fast%20Hydraulic%20Erosion%20Simulation%20and%20Visualization%20on%20GPU.pdf
 - https://arxiv.org/pdf/2302.06087.pdf
 
+A nice overview of different methods can be found here, unfortunately not open access:
+- https://dl.acm.org/doi/pdf/10.1145/2700533
+
 ## Usage
 - Load the project and enter the main scene
 - Select the Fluidsim object

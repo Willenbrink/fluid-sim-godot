@@ -62,7 +62,7 @@ gravity_scale = 0.0
 disable_3d = true
 render_target_update_mode = 4
 
-[node name="TextureRect" type="TextureRect" parent="SubViewport"]
+[node name="Fluidsim" type="TextureRect" parent="SubViewport"]
 offset_right = 512.0
 offset_bottom = 512.0
 texture = SubResource("ImageTexture_l7wlh")

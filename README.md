@@ -13,3 +13,8 @@ The work is primarily based on:
 - Check "Run in Editor" on the Fluidsim object
 
 You should now see a cube of water slowly spread out.
+
+## TODO
+- Interactivity (i.e. adding/removing liquids)
+- Using a terrain instead of using a flat surface
+- Physics (e.g. floating)

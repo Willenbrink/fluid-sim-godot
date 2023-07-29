@@ -16,8 +16,8 @@ layout(set = 0, binding = 2, rgba32f) uniform image2D map_out;
 layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
-const float length = 10.0;
-const float dt = 0.2;
+const float length = 3.0;
+const float dt = 1.0;
 
 float height(ivec2 cell_idx) {
     return imageLoad(map_in, cell_idx).x;
@@ -31,14 +31,24 @@ vec4 calc_flux(ivec2 pos) {
     ivec2 dir = ivec2(1, 0);
 
     // TODO some constant? cross section * gravity / length
-    float c = 1.0 / length;
-    float fluxr = max(0.0, 0.9999 * flux(pos).r + dt * c * (height(pos) - height(pos - dir)));
-    float fluxg = max(0.0, 0.9999 * flux(pos).g + dt * c * (height(pos) - height(pos + dir)));
-    float fluxb = max(0.0, 0.9999 * flux(pos).b + dt * c * (height(pos) - height(pos - dir.yx)));
-    float fluxa = max(0.0, 0.9999 * flux(pos).a + dt * c * (height(pos) - height(pos + dir.yx)));
-    float K = min(1.0, height(pos) * length * length
-                  / ( dt * ( fluxr + fluxg + fluxb + fluxa )));
-    return K * vec4( fluxr, fluxg, fluxb, fluxa );
+    float c = dt / length;
+    vec4 flux_new = flux(pos) + c * vec4(
+        height(pos) - height(pos - dir),
+        height(pos) - height(pos + dir),
+        height(pos) - height(pos - dir.yx),
+        height(pos) - height(pos + dir.yx)
+      );
+    flux_new.r = max(0.0, flux_new.r);
+    flux_new.g = max(0.0, flux_new.g);
+    flux_new.b = max(0.0, flux_new.b);
+    flux_new.a = max(0.0, flux_new.a);
+
+    // Normalize
+    flux_new = flux_new * dt / (length * length);
+    // Decrease flux to avoid negative height
+    flux_new = flux_new * min(1.0, height(pos) / ( flux_new.r + flux_new.g + flux_new.b + flux_new.a ));
+
+    return flux_new;
 }
 
 void main() {

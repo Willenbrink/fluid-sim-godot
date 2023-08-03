@@ -16,9 +16,6 @@ layout(set = 0, binding = 2, rgba32f) uniform image2D map_out;
 layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
-const float length = 3.0;
-const float dt = 1.0;
-
 float height(ivec2 cell_idx) {
     return imageLoad(map_in, cell_idx).x;
 }
@@ -30,23 +27,27 @@ vec4 flux(ivec2 cell_idx) {
 vec4 calc_flux(ivec2 pos) {
     ivec2 dir = ivec2(1, 0);
 
-    // TODO some constant? cross section * gravity / length
-    float c = dt / length;
-    vec4 flux_new = flux(pos) + c * vec4(
+    // A value of 1.0 that the whole difference is added to the current flux
+    float delay = 0.005;
+    vec4 flux_new = flux(pos) + delay * vec4(
         height(pos) - height(pos - dir),
         height(pos) - height(pos + dir),
         height(pos) - height(pos - dir.yx),
         height(pos) - height(pos + dir.yx)
       );
+
+    // We store only the outflow flux
     flux_new.r = max(0.0, flux_new.r);
     flux_new.g = max(0.0, flux_new.g);
     flux_new.b = max(0.0, flux_new.b);
     flux_new.a = max(0.0, flux_new.a);
 
-    // Normalize
-    flux_new = flux_new * dt / (length * length);
-    // Decrease flux to avoid negative height
-    flux_new = flux_new * min(1.0, height(pos) / ( flux_new.r + flux_new.g + flux_new.b + flux_new.a ));
+
+    // Scale flux to avoid negative height
+    flux_new *= min(1.0,
+                      abs(height(pos))
+                    / ( flux_new.r + flux_new.g + flux_new.b + flux_new.a )
+      );
 
     return flux_new;
 }

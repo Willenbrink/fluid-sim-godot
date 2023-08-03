@@ -28,6 +28,7 @@ float calc_height(ivec2 pos) {
     ivec2 dir = ivec2(1, 0);
 
     float flux_incoming =
+        // The x+1 flux value of the x-1 cell
           flux(pos - dir).g
         + flux(pos + dir).r
         + flux(pos - dir.yx).a

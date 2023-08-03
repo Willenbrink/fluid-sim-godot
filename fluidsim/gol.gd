@@ -2,6 +2,11 @@
 extends TextureRect
 
 @export var run_in_editor = false;
+@export var step : bool :
+	get: return false
+	set(_value):
+		step = false
+		compute()
 @export var show_flux = false;
 @export var update_texture = false;
 @export var reset : bool :
@@ -76,9 +81,7 @@ func init() -> void:
 				#if i > 220 && i < 260 && j > 220 && j < 260:
 					image_height.set_pixel(i, j, Color.RED)
 					image_height.set_pixel(i, j, Color.RED)
-		image_height.set_pixel(0, 0, Color.RED)
-		image_height.set_pixel(1, 0, Color.BLACK)
-		
+
 	read_data_height = image_height.get_data()
 	
 	var image_flux := Image.create(image_size.x, image_size.y, false, image_format)
@@ -150,6 +153,8 @@ func init() -> void:
 		[read_uniform_height, write_uniform_height, read_uniform_flux, write_uniform_flux],
 		shader_flux, 0)
 		
+	show_texture();
+
 # func _exit_tree() -> void:
 # 	free()
 	
@@ -173,7 +178,7 @@ func compute() -> void:
 	rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
 	rd.compute_list_end()  # Tell the GPU we are done with this compute task
 	rd.submit()  # Force the GPU to start our commands
-	rd.sync()  # Force the CPU to wait for the GPU to finish with the recorded commands
+	rd.sync()  # Finish flux calc first
 	
 	compute_list = rd.compute_list_begin()
 	rd.compute_list_bind_compute_pipeline(compute_list, pipeline_height)
@@ -189,9 +194,12 @@ func compute() -> void:
 	read_data_flux = rd.texture_get_data(texture_write_flux, 0)
 		
 	if update_texture:
-		var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
+		show_texture();
+
+func show_texture() -> void:
+	if show_flux:
 		var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_flux)
-		if show_flux:
-			texture = ImageTexture.create_from_image(image_flux)
-		else:
-			texture = ImageTexture.create_from_image(image_height)
+		texture = ImageTexture.create_from_image(image_flux)
+	else:
+		var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
+		texture = ImageTexture.create_from_image(image_height)

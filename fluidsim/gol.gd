@@ -6,7 +6,7 @@ extends TextureRect
 	get: return false
 	set(_value):
 		step = false
-		compute()
+		compute_and_display(1)
 @export var show_flux = false;
 @export var update_texture = false;
 @export var reset : bool :
@@ -14,6 +14,8 @@ extends TextureRect
 	set(_value):
 		reset = false
 		init()
+@export var accelerate = false;
+@export var real_time_factor = 5;
 
 var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://fluidsim/shader/flux.glsl")
@@ -166,10 +168,16 @@ func free() -> void:
 func _process(_delta: float) -> void:
 	#place_fluid()
 	if (not Engine.is_editor_hint() || run_in_editor):
-		compute()
+		compute_and_display(real_time_factor if accelerate else 1)
 
 #func place_fluid() -> void:
 	
+func compute_and_display(num_iter):
+	for n in num_iter:
+		compute()
+
+	if update_texture:
+		show_texture();
 
 func compute() -> void:
 	rd.texture_update(texture_read_height, 0, read_data_height)
@@ -193,13 +201,9 @@ func compute() -> void:
 	rd.submit()
 	rd.sync()
 	
-
 	# Now we can grab our data from the texture
 	read_data_height = rd.texture_get_data(texture_write_height, 0)
 	read_data_flux = rd.texture_get_data(texture_write_flux, 0)
-		
-	if update_texture:
-		show_texture();
 
 func show_texture() -> void:
 	if show_flux:

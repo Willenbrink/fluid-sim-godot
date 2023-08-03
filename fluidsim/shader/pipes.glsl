@@ -25,16 +25,17 @@ vec4 flux(ivec2 cell_idx) {
 }
 
 float calc_height(ivec2 pos) {
-    ivec2 dir = ivec2(1, 0);
+    // Different directions. Right, Down, Down-left, Down-right
+    ivec2 d_r = ivec2(1, 0);
+    ivec2 d_d = ivec2(0, 1);
+    ivec2 d_dl = ivec2(-1, 1);
+    ivec2 d_dr = ivec2(1, 1);
 
-    float flux_incoming =
-        // The x+1 flux value of the x-1 cell
-          flux(pos - dir).g
-        + flux(pos + dir).r
-        + flux(pos - dir.yx).a
-        + flux(pos + dir.yx).b;
-    float flux_outgoing = flux(pos).r + flux(pos).g + flux(pos).b + flux(pos).a;
-    return height(pos) + flux_incoming - flux_outgoing;
+    return height(pos)
+        + flux(pos - d_r).r - flux(pos).r
+        + flux(pos - d_d).g - flux(pos).g
+        + flux(pos - d_dl).b - flux(pos).b
+        + flux(pos - d_dr).a - flux(pos).a;
 }
 
 void main() {

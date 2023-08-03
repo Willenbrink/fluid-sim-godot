@@ -17,39 +17,54 @@ layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
 float height(ivec2 cell_idx) {
+    ivec2 size = imageSize(map_in);
     return imageLoad(map_in, cell_idx).x;
 }
 
 vec4 flux(ivec2 cell_idx) {
+    ivec2 size = imageSize(map_in);
     return imageLoad(flux_in, cell_idx);
 }
 
 vec4 calc_flux(ivec2 pos) {
-    ivec2 dir = ivec2(1, 0);
+    // Different directions. Right, Down, Down-left, Down-right
+    ivec2 d_r = ivec2(1, 0);
+    ivec2 d_d = ivec2(0, 1);
+    ivec2 d_dl = ivec2(-1, 1);
+    ivec2 d_dr = ivec2(1, 1);
 
+    float dampening = 1.0;
     // A value of 1.0 that the whole difference is added to the current flux
-    float delay = 0.005;
-    vec4 flux_new = flux(pos) + delay * vec4(
-        height(pos) - height(pos - dir),
-        height(pos) - height(pos + dir),
-        height(pos) - height(pos - dir.yx),
-        height(pos) - height(pos + dir.yx)
-      );
+    // A lower value represents a slower liquid, similar to viscosity (though not the same)
+    float viscos = 0.00005;
+    float flux_r = dampening * flux(pos).r + viscos * (height(pos) - height(pos + d_r));
+    float flux_d = dampening * flux(pos).g + viscos * (height(pos) - height(pos + d_d));
+    float flux_dl = dampening * flux(pos).b + viscos * (height(pos) - height(pos + d_dl));
+    float flux_dr = dampening * flux(pos).a + viscos * (height(pos) - height(pos + d_dr));
 
-    // We store only the outflow flux
-    flux_new.r = max(0.0, flux_new.r);
-    flux_new.g = max(0.0, flux_new.g);
-    flux_new.b = max(0.0, flux_new.b);
-    flux_new.a = max(0.0, flux_new.a);
+    int num_pipes = 8;
 
+    flux_r = min(height(pos) / num_pipes, flux_r);
+    flux_r = max(-height(pos + d_r) / num_pipes, flux_r);
+    flux_r = max((-1.0 + height(pos)) / num_pipes, flux_r);
+    flux_r = min(( 1.0 - height(pos + d_r)) / num_pipes, flux_r);
 
-    // Scale flux to avoid negative height
-    flux_new *= min(1.0,
-                      abs(height(pos))
-                    / ( flux_new.r + flux_new.g + flux_new.b + flux_new.a )
-      );
+    flux_d = min(height(pos) / num_pipes, flux_d);
+    flux_d = max(-height(pos + d_d) / num_pipes, flux_d);
+    flux_d = max((-1.0 + height(pos)) / num_pipes, flux_d);
+    flux_d = min(( 1.0 - height(pos + d_d)) / num_pipes, flux_d);
 
-    return flux_new;
+    flux_dl = min(height(pos) / num_pipes, flux_dl);
+    flux_dl = max(-height(pos + d_dl) / num_pipes, flux_dl);
+    flux_dl = max((-1.0 + height(pos)) / num_pipes, flux_dl);
+    flux_dl = min(( 1.0 - height(pos + d_dl)) / num_pipes, flux_dl);
+
+    flux_dr = min(height(pos) / num_pipes, flux_dr);
+    flux_dr = max(-height(pos + d_dr) / num_pipes, flux_dr);
+    flux_dr = max((-1.0 + height(pos)) / num_pipes, flux_dr);
+    flux_dr = min(( 1.0 - height(pos + d_dr)) / num_pipes, flux_dr);
+
+    return vec4(flux_r, flux_d, flux_dl, flux_dr);
 }
 
 void main() {
@@ -57,12 +72,18 @@ void main() {
   vec4 flux_new = calc_flux(cell_idx);
   ivec2 size = imageSize(flux_in);
   if(cell_idx.x == 0)
-      flux_new.r = 0.0;
-  if(cell_idx.y == 0)
       flux_new.b = 0.0;
-  if(cell_idx.x == size.x - 1)
-      flux_new.g = 0.0;
-  if(cell_idx.y == size.y - 1)
+  if(cell_idx.y == 0) {
+
+  }
+  if(cell_idx.x == size.x - 1) {
+      flux_new.r = 0.0;
       flux_new.a = 0.0;
+  }
+  if(cell_idx.y == size.y - 1) {
+      flux_new.g = 0.0;
+      flux_new.b = 0.0;
+      flux_new.a = 0.0;
+  }
   imageStore(flux_out, cell_idx, flux_new);
 }

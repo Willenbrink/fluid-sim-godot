@@ -77,11 +77,13 @@ func init() -> void:
 			for j in image_size.y:
 				var upper = image_size.x / 2 * 1.1
 				var lower = image_size.x / 2 * 0.9
+				upper = 55
+				lower = 15
 				if i > lower && i < upper && j > lower && j < upper:
 				#if i > 220 && i < 260 && j > 220 && j < 260:
 					image_height.set_pixel(i, j, Color.RED)
 					image_height.set_pixel(i, j, Color.RED)
-
+		#image_height.set_pixel(50, 50, Color.RED)
 	read_data_height = image_height.get_data()
 	
 	var image_flux := Image.create(image_size.x, image_size.y, false, image_format)
@@ -162,9 +164,12 @@ func free() -> void:
 	pass
 
 func _process(_delta: float) -> void:
+	#place_fluid()
 	if (not Engine.is_editor_hint() || run_in_editor):
 		compute()
 
+#func place_fluid() -> void:
+	
 
 func compute() -> void:
 	rd.texture_update(texture_read_height, 0, read_data_height)

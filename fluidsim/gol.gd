@@ -125,27 +125,47 @@ func init() -> void:
 	tex_flux_B = rd.texture_create(tex_map_format, tex_view_flux, [data_flux_B])
 	
 	
-	var uniform_height_A := RDUniform.new()
-	uniform_height_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	uniform_height_A.binding = 0
-	uniform_height_A.add_id(tex_height_A)
-	var uniform_height_B := RDUniform.new()
-	uniform_height_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	uniform_height_B.binding = 2
-	uniform_height_B.add_id(tex_height_B)
+	var uniform_height_from_A := RDUniform.new()
+	uniform_height_from_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_height_from_A.binding = 0
+	uniform_height_from_A.add_id(tex_height_A)
+	var uniform_height_to_A := RDUniform.new()
+	uniform_height_to_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_height_to_A.binding = 2
+	uniform_height_to_A.add_id(tex_height_A)
 	
-	var uniform_flux_A := RDUniform.new()
-	uniform_flux_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	uniform_flux_A.binding = 1
-	uniform_flux_A.add_id(tex_flux_A)
-	var uniform_flux_B := RDUniform.new()
-	uniform_flux_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	uniform_flux_B.binding = 3
-	uniform_flux_B.add_id(tex_flux_B)
+	var uniform_height_from_B := RDUniform.new()
+	uniform_height_from_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_height_from_B.binding = 0
+	uniform_height_from_B.add_id(tex_height_B)
+	var uniform_height_to_B := RDUniform.new()
+	uniform_height_to_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_height_to_B.binding = 2
+	uniform_height_to_B.add_id(tex_height_B)
+	
+	var uniform_flux_from_A := RDUniform.new()
+	uniform_flux_from_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_flux_from_A.binding = 1
+	uniform_flux_from_A.add_id(tex_flux_A)
+	var uniform_flux_to_A := RDUniform.new()
+	uniform_flux_to_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_flux_to_A.binding = 3
+	uniform_flux_to_A.add_id(tex_flux_A)
+	
+	var uniform_flux_from_B := RDUniform.new()
+	uniform_flux_from_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_flux_from_B.binding = 1
+	uniform_flux_from_B.add_id(tex_flux_B)
+	var uniform_flux_to_B := RDUniform.new()
+	uniform_flux_to_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_flux_to_B.binding = 3
+	uniform_flux_to_B.add_id(tex_flux_B)
 	
 	
-	var set_A2B = [uniform_height_A, uniform_height_B, uniform_flux_A, uniform_flux_B]
-	var set_B2A = [uniform_height_B, uniform_height_A, uniform_flux_B, uniform_flux_A]
+	var set_A2B = [uniform_height_from_A, uniform_height_to_B,
+				   uniform_flux_from_A, uniform_flux_to_B]
+	var set_B2A = [uniform_height_from_B, uniform_height_to_A,
+				   uniform_flux_from_B, uniform_flux_to_A]
 	
 	uniform_set_height_A2B = rd.uniform_set_create(set_A2B, shader_height, 0)
 	uniform_set_height_B2A = rd.uniform_set_create(set_B2A, shader_height, 0)
@@ -169,9 +189,9 @@ func _process(_delta: float) -> void:
 #func place_fluid() -> void:
 
 func compute(num_iter) -> void:
+	rd.texture_update(tex_height_A, 0, data_height_A)
+	rd.texture_update(tex_flux_A, 0, data_flux_A)
 	for n in num_iter:
-		rd.texture_update(tex_height_A, 0, data_height_A)
-		rd.texture_update(tex_flux_A, 0, data_flux_A)
 		# Process:
 		# list begin: Start compute list to start recording our compute commands
 		# bind pipeline: Bind the pipeline, this tells the GPU what shader to use
@@ -194,12 +214,13 @@ func compute(num_iter) -> void:
 		rd.compute_list_end()
 		rd.submit()
 		rd.sync()
-		data_height_A = rd.texture_get_data(tex_height_B if reading_A else tex_height_A, 0)
-		data_flux_A = rd.texture_get_data(tex_flux_B if reading_A else tex_flux_A, 0)
 		
-		#reading_A = !reading_A
+		reading_A = !reading_A
 	
 	# Now we can grab our data from the texture
+	# Confusing: At this point reading_A has already been flipped
+	data_height_A = rd.texture_get_data(tex_height_A if reading_A else tex_height_B, 0)
+	data_flux_A = rd.texture_get_data(tex_flux_A if reading_A else tex_flux_B, 0)
 	reading_A = true
 
 func show_texture() -> void:

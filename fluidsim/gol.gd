@@ -6,16 +6,16 @@ extends TextureRect
 	get: return false
 	set(_value):
 		step = false
-		compute_and_display(1)
+		compute(accel_factor)
+		show_texture()
 @export var show_flux = false;
-@export var update_texture = false;
 @export var reset : bool :
 	get: return false
 	set(_value):
 		reset = false
 		init()
 @export var accelerate = false;
-@export var real_time_factor = 5;
+@export var accel_factor = 5;
 
 var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://fluidsim/shader/flux.glsl")
@@ -24,21 +24,26 @@ var height_shader_file: RDShaderFile = preload("res://fluidsim/shader/pipes.glsl
 var shader_flux: RID
 var shader_height: RID
 
-var texture_read_height: RID
-var texture_write_height: RID
-var texture_read_flux: RID
-var texture_write_flux: RID
-
-var uniform_set_height: RID
-var uniform_set_flux: RID
-
 var pipeline_flux: RID
 var pipeline_height: RID
 
-var read_data_height: PackedByteArray
-var write_data_height: PackedByteArray
-var read_data_flux: PackedByteArray
-var write_data_flux: PackedByteArray
+# We use two sets of uniforms, once for reading from A and writing to B
+# and the other way round. We need to keep track of this to render the data from the right buffer.
+var reading_A: bool
+var tex_height_A: RID
+var tex_height_B: RID
+var tex_flux_A: RID
+var tex_flux_B: RID
+
+var data_height_A: PackedByteArray
+var data_height_B: PackedByteArray
+var data_flux_A: PackedByteArray
+var data_flux_B: PackedByteArray
+
+var uniform_set_height_A2B: RID
+var uniform_set_height_B2A: RID
+var uniform_set_flux_A2B: RID
+var uniform_set_flux_B2A: RID
 
 @export var image_size: Vector2i
 @export var use_noise = false
@@ -77,6 +82,9 @@ func init() -> void:
 	else:
 		for i in image_size.x:
 			for j in image_size.y:
+				image_height.set_pixel(i, j, Color.BLACK)
+		for i in image_size.x:
+			for j in image_size.y:
 				var upper = image_size.x / 2 * 1.1
 				var lower = image_size.x / 2 * 0.9
 				upper = 55
@@ -86,77 +94,64 @@ func init() -> void:
 					image_height.set_pixel(i, j, Color.RED)
 					image_height.set_pixel(i, j, Color.RED)
 		#image_height.set_pixel(50, 50, Color.RED)
-	read_data_height = image_height.get_data()
+	
+	reading_A = true
+	
+	data_height_A = image_height.get_data()
+	data_height_B = PackedByteArray()
+	data_height_B.resize(data_height_A.size())
 	
 	var image_flux := Image.create(image_size.x, image_size.y, false, image_format)
-	read_data_flux = image_flux.get_data()
-	
+	data_flux_A = image_flux.get_data()
+	data_flux_B = PackedByteArray()
+	data_flux_B.resize(data_flux_A.size())	
 
-	var tex_read_format := RDTextureFormat.new()
-	tex_read_format.width = image_size.x
-	tex_read_format.height = image_size.y
-	tex_read_format.depth = 4
-	tex_read_format.format = data_format
-	tex_read_format.usage_bits = (
-		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
-		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
-	)
-	var tex_view_height := RDTextureView.new()
-	texture_read_height = rd.texture_create(tex_read_format, tex_view_height, [read_data_height])
-	
-	var tex_view_flux := RDTextureView.new()
-	texture_read_flux = rd.texture_create(tex_read_format, tex_view_flux, [read_data_flux])
-	
-	# Create uniform set using the read texture
-	var read_uniform_height := RDUniform.new()
-	read_uniform_height.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	read_uniform_height.binding = 0
-	read_uniform_height.add_id(texture_read_height)
-	
-	var read_uniform_flux := RDUniform.new()
-	read_uniform_flux.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	read_uniform_flux.binding = 1
-	read_uniform_flux.add_id(texture_read_flux)
-	
-	# Initialize write data
-	write_data_height = PackedByteArray()
-	write_data_height.resize(read_data_height.size())
-	
-	write_data_flux = PackedByteArray()
-	write_data_flux.resize(read_data_flux.size())
-	
-
-	var tex_write_format := RDTextureFormat.new()
-	tex_write_format.width = image_size.x
-	tex_write_format.height = image_size.y
-	tex_write_format.depth = 4
-	tex_write_format.format = data_format
-	tex_write_format.usage_bits = (
+	var tex_map_format := RDTextureFormat.new()
+	tex_map_format.width = image_size.x
+	tex_map_format.height = image_size.y
+	tex_map_format.depth = 4
+	tex_map_format.format = data_format
+	tex_map_format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
 	)
-	texture_write_height = rd.texture_create(tex_write_format, tex_view_height, [write_data_height])
-	texture_write_flux = rd.texture_create(tex_write_format, tex_view_flux, [write_data_flux])
-
-	# Create uniform set using the write texture
-	var write_uniform_height := RDUniform.new()
-	write_uniform_height.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	write_uniform_height.binding = 2
-	write_uniform_height.add_id(texture_write_height)
+	var tex_view_height := RDTextureView.new()
+	tex_height_A = rd.texture_create(tex_map_format, tex_view_height, [data_height_A])
+	tex_height_B = rd.texture_create(tex_map_format, tex_view_height, [data_height_B])
 	
-	var write_uniform_flux := RDUniform.new()
-	write_uniform_flux.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
-	write_uniform_flux.binding = 3
-	write_uniform_flux.add_id(texture_write_flux)
-
-	uniform_set_height = rd.uniform_set_create(
-		[read_uniform_height, write_uniform_height, read_uniform_flux, write_uniform_flux],
-		shader_height, 0)
-	uniform_set_flux = rd.uniform_set_create(
-		[read_uniform_height, write_uniform_height, read_uniform_flux, write_uniform_flux],
-		shader_flux, 0)
-		
+	var tex_view_flux := RDTextureView.new()
+	tex_flux_A = rd.texture_create(tex_map_format, tex_view_flux, [data_flux_A])
+	tex_flux_B = rd.texture_create(tex_map_format, tex_view_flux, [data_flux_B])
+	
+	
+	var uniform_height_A := RDUniform.new()
+	uniform_height_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_height_A.binding = 0
+	uniform_height_A.add_id(tex_height_A)
+	var uniform_height_B := RDUniform.new()
+	uniform_height_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_height_B.binding = 2
+	uniform_height_B.add_id(tex_height_B)
+	
+	var uniform_flux_A := RDUniform.new()
+	uniform_flux_A.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_flux_A.binding = 1
+	uniform_flux_A.add_id(tex_flux_A)
+	var uniform_flux_B := RDUniform.new()
+	uniform_flux_B.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	uniform_flux_B.binding = 3
+	uniform_flux_B.add_id(tex_flux_B)
+	
+	
+	var set_A2B = [uniform_height_A, uniform_height_B, uniform_flux_A, uniform_flux_B]
+	var set_B2A = [uniform_height_B, uniform_height_A, uniform_flux_B, uniform_flux_A]
+	
+	uniform_set_height_A2B = rd.uniform_set_create(set_A2B, shader_height, 0)
+	uniform_set_height_B2A = rd.uniform_set_create(set_B2A, shader_height, 0)
+	uniform_set_flux_A2B = rd.uniform_set_create(set_A2B, shader_flux, 0)
+	uniform_set_flux_B2A = rd.uniform_set_create(set_B2A, shader_flux, 0)
+	
 	show_texture();
 
 # func _exit_tree() -> void:
@@ -168,47 +163,49 @@ func free() -> void:
 func _process(_delta: float) -> void:
 	#place_fluid()
 	if (not Engine.is_editor_hint() || run_in_editor):
-		compute_and_display(real_time_factor if accelerate else 1)
-
-#func place_fluid() -> void:
-	
-func compute_and_display(num_iter):
-	for n in num_iter:
-		compute()
-
-	if update_texture:
+		compute(accel_factor if accelerate else 1)
 		show_texture();
 
-func compute() -> void:
-	rd.texture_update(texture_read_height, 0, read_data_height)
-	rd.texture_update(texture_read_flux, 0, read_data_flux)
-	# Start compute list to start recording our compute commands
-	var compute_list := rd.compute_list_begin()
-	# Bind the pipeline, this tells the GPU what shader to use
-	rd.compute_list_bind_compute_pipeline(compute_list, pipeline_flux)
-	# Binds the uniform set with the data we want to give our shader
-	rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux, 0)
-	rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
-	rd.compute_list_end()  # Tell the GPU we are done with this compute task
-	rd.submit()  # Force the GPU to start our commands
-	rd.sync()  # Finish flux calc first
-	
-	compute_list = rd.compute_list_begin()
-	rd.compute_list_bind_compute_pipeline(compute_list, pipeline_height)
-	rd.compute_list_bind_uniform_set(compute_list, uniform_set_height, 0)
-	rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
-	rd.compute_list_end()
-	rd.submit()
-	rd.sync()
+#func place_fluid() -> void:
+
+func compute(num_iter) -> void:
+	for n in num_iter:
+		rd.texture_update(tex_height_A, 0, data_height_A)
+		rd.texture_update(tex_flux_A, 0, data_flux_A)
+		# Process:
+		# list begin: Start compute list to start recording our compute commands
+		# bind pipeline: Bind the pipeline, this tells the GPU what shader to use
+		# bind uniform: Binds the uniform set with the data we want to give our shader
+		# list end: Tell the GPU we are done with this compute task
+		# submit and sync: start and await computation
+		
+		var compute_list := rd.compute_list_begin()
+		rd.compute_list_bind_compute_pipeline(compute_list, pipeline_flux)
+		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_A2B if reading_A else uniform_set_flux_B2A, 0)
+		rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
+		rd.compute_list_end()
+		rd.submit()
+		rd.sync()  # Finish flux calc first
+		
+		compute_list = rd.compute_list_begin()
+		rd.compute_list_bind_compute_pipeline(compute_list, pipeline_height)
+		rd.compute_list_bind_uniform_set(compute_list, uniform_set_height_A2B if reading_A else uniform_set_height_B2A, 0)
+		rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
+		rd.compute_list_end()
+		rd.submit()
+		rd.sync()
+		data_height_A = rd.texture_get_data(tex_height_B if reading_A else tex_height_A, 0)
+		data_flux_A = rd.texture_get_data(tex_flux_B if reading_A else tex_flux_A, 0)
+		
+		#reading_A = !reading_A
 	
 	# Now we can grab our data from the texture
-	read_data_height = rd.texture_get_data(texture_write_height, 0)
-	read_data_flux = rd.texture_get_data(texture_write_flux, 0)
+	reading_A = true
 
 func show_texture() -> void:
 	if show_flux:
-		var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_flux)
+		var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
 		texture = ImageTexture.create_from_image(image_flux)
 	else:
-		var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, read_data_height)
+		var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
 		texture = ImageTexture.create_from_image(image_height)

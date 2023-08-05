@@ -64,13 +64,13 @@ vec4 calc_flux(ivec2 pos) {
     flux_dr = min(( 1.0 - height(pos + d_dr)) / num_pipes, flux_dr);
 
     // TODO experiment: Dampen extreme fluxes, hopefully equivalent to a low-pass on the frequency of the waves
-    float exp = 2;
+    float exp = 1;
     flux_r *= pow(1-abs(flux_r), exp);
     flux_d *= pow(1-abs(flux_d), exp);
     flux_dl *= pow(1-abs(flux_dl), exp);
     flux_dr *= pow(1-abs(flux_dr), exp);
 
-    return vec4(flux_r, flux_d, 0.0, 0.0);
+    return vec4(flux_r, flux_d, 0.0, 1.0);
 }
 
 void main() {

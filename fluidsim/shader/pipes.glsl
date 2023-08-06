@@ -33,9 +33,9 @@ float calc_height(ivec2 pos) {
 
     return height(pos)
         + flux(pos - d_r).r - flux(pos).r
-        + flux(pos - d_d).g - flux(pos).g;
-        // + flux(pos - d_dl).b - flux(pos).b
-        // + flux(pos - d_dr).a - flux(pos).a;
+        + flux(pos - d_d).g - flux(pos).g
+        + flux(pos - d_dl).b - flux(pos).b
+        + flux(pos - d_dr).a - flux(pos).a;
 }
 
 void main() {

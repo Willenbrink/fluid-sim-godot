@@ -35,42 +35,43 @@ vec4 calc_flux(ivec2 pos) {
 
     // A value of 1.0 that the whole difference is added to the current flux
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    float viscos = 0.005;
-    float flux_r = flux(pos).r + viscos * (height(pos) - height(pos + d_r));
-    float flux_d = flux(pos).g + viscos * (height(pos) - height(pos + d_d));
-    float flux_dl = flux(pos).b + viscos * (height(pos) - height(pos + d_dl));
-    float flux_dr = flux(pos).a + viscos * (height(pos) - height(pos + d_dr));
+    float viscos = 0.000005;
+    float d = 0.9999;
+    float flux_r = d * flux(pos).r + viscos * (height(pos) - height(pos + d_r));
+    float flux_d = d * flux(pos).g + viscos * (height(pos) - height(pos + d_d));
+    float flux_dl = d * flux(pos).b + viscos * (height(pos) - height(pos + d_dl));
+    float flux_dr = d * flux(pos).a + viscos * (height(pos) - height(pos + d_dr));
 
-    int num_pipes = 4;
+    int num_pipes = 8;
 
-    flux_r = min(height(pos) / num_pipes, flux_r);
-    flux_r = max(-height(pos + d_r) / num_pipes, flux_r);
-    flux_r = max((-1.0 + height(pos)) / num_pipes, flux_r);
-    flux_r = min(( 1.0 - height(pos + d_r)) / num_pipes, flux_r);
+    // flux_r = min(height(pos) / num_pipes, flux_r);
+    // flux_r = max(-height(pos + d_r) / num_pipes, flux_r);
+    // flux_r = max((-1.0 + height(pos)) / num_pipes, flux_r);
+    // flux_r = min(( 1.0 - height(pos + d_r)) / num_pipes, flux_r);
 
-    flux_d = min(height(pos) / num_pipes, flux_d);
-    flux_d = max(-height(pos + d_d) / num_pipes, flux_d);
-    flux_d = max((-1.0 + height(pos)) / num_pipes, flux_d);
-    flux_d = min(( 1.0 - height(pos + d_d)) / num_pipes, flux_d);
+    // flux_d = min(height(pos) / num_pipes, flux_d);
+    // flux_d = max(-height(pos + d_d) / num_pipes, flux_d);
+    // flux_d = max((-1.0 + height(pos)) / num_pipes, flux_d);
+    // flux_d = min(( 1.0 - height(pos + d_d)) / num_pipes, flux_d);
 
-    flux_dl = min(height(pos) / num_pipes, flux_dl);
-    flux_dl = max(-height(pos + d_dl) / num_pipes, flux_dl);
-    flux_dl = max((-1.0 + height(pos)) / num_pipes, flux_dl);
-    flux_dl = min(( 1.0 - height(pos + d_dl)) / num_pipes, flux_dl);
+    // flux_dl = min(height(pos) / num_pipes, flux_dl);
+    // flux_dl = max(-height(pos + d_dl) / num_pipes, flux_dl);
+    // flux_dl = max((-1.0 + height(pos)) / num_pipes, flux_dl);
+    // flux_dl = min(( 1.0 - height(pos + d_dl)) / num_pipes, flux_dl);
 
-    flux_dr = min(height(pos) / num_pipes, flux_dr);
-    flux_dr = max(-height(pos + d_dr) / num_pipes, flux_dr);
-    flux_dr = max((-1.0 + height(pos)) / num_pipes, flux_dr);
-    flux_dr = min(( 1.0 - height(pos + d_dr)) / num_pipes, flux_dr);
+    // flux_dr = min(height(pos) / num_pipes, flux_dr);
+    // flux_dr = max(-height(pos + d_dr) / num_pipes, flux_dr);
+    // flux_dr = max((-1.0 + height(pos)) / num_pipes, flux_dr);
+    // flux_dr = min(( 1.0 - height(pos + d_dr)) / num_pipes, flux_dr);
 
     // TODO experiment: Dampen extreme fluxes, hopefully equivalent to a low-pass on the frequency of the waves
-    float exp = 1;
-    flux_r *= pow(1-abs(flux_r), exp);
-    flux_d *= pow(1-abs(flux_d), exp);
-    flux_dl *= pow(1-abs(flux_dl), exp);
-    flux_dr *= pow(1-abs(flux_dr), exp);
+    // float exp = 0;
+    // flux_r *= pow(1-abs(flux_r), exp);
+    // flux_d *= pow(1-abs(flux_d), exp);
+    // flux_dl *= pow(1-abs(flux_dl), exp);
+    // flux_dr *= pow(1-abs(flux_dr), exp);
 
-    return vec4(flux_r, flux_d, 0.0, 1.0);
+    return vec4(flux_r, flux_d, flux_dl, flux_dr);
 }
 
 void main() {

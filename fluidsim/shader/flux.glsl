@@ -35,8 +35,9 @@ vec4 calc_flux(ivec2 pos) {
 
     // A value of 1.0 that the whole difference is added to the current flux
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    float viscos = 0.000005;
-    float d = 0.9999;
+    float viscos = 0.00001;
+    float d = 0.9998;
+    // float d = 1.0;
     float flux_r = d * flux(pos).r + viscos * (height(pos) - height(pos + d_r));
     float flux_d = d * flux(pos).g + viscos * (height(pos) - height(pos + d_d));
     float flux_dl = d * flux(pos).b + viscos * (height(pos) - height(pos + d_dl));
@@ -44,25 +45,35 @@ vec4 calc_flux(ivec2 pos) {
 
     int num_pipes = 8;
 
-    // flux_r = min(height(pos) / num_pipes, flux_r);
-    // flux_r = max(-height(pos + d_r) / num_pipes, flux_r);
-    // flux_r = max((-1.0 + height(pos)) / num_pipes, flux_r);
-    // flux_r = min(( 1.0 - height(pos + d_r)) / num_pipes, flux_r);
+    // TODO The upper limit is not checked because we never reach it.
+    // Rather, I assume we never reach it. Verify this
 
-    // flux_d = min(height(pos) / num_pipes, flux_d);
-    // flux_d = max(-height(pos + d_d) / num_pipes, flux_d);
-    // flux_d = max((-1.0 + height(pos)) / num_pipes, flux_d);
-    // flux_d = min(( 1.0 - height(pos + d_d)) / num_pipes, flux_d);
+    // The signs are tricky. Flows to the right are positive, to the left are negative.
+    // Limiting the flow can be done in the form
+    // - min(height(pos_right), - flux_right)
+    // as the flow from the left is -flux_right
+    // The above formula can also be rewritten by pushing the - inside the min
+    // max( -height(pos_right), flux_right)
+    // This latter form is the one used here
+    flux_r = min(height(pos) / num_pipes, flux_r);
+    flux_r = max(-height(pos + d_r) / num_pipes, flux_r);
+    // flux_r = max((-1.0 + height(pos + d_r)) / num_pipes, flux_r);
+    // flux_r = min(( 1.0 - height(pos)) / num_pipes, flux_r);
 
-    // flux_dl = min(height(pos) / num_pipes, flux_dl);
-    // flux_dl = max(-height(pos + d_dl) / num_pipes, flux_dl);
-    // flux_dl = max((-1.0 + height(pos)) / num_pipes, flux_dl);
-    // flux_dl = min(( 1.0 - height(pos + d_dl)) / num_pipes, flux_dl);
+    flux_d = min(height(pos) / num_pipes, flux_d);
+    flux_d = max(-height(pos + d_d) / num_pipes, flux_d);
+    // flux_d = max((-1.0 + height(pos + d_d)) / num_pipes, flux_d);
+    // flux_d = min(( 1.0 - height(pos)) / num_pipes, flux_d);
 
-    // flux_dr = min(height(pos) / num_pipes, flux_dr);
-    // flux_dr = max(-height(pos + d_dr) / num_pipes, flux_dr);
-    // flux_dr = max((-1.0 + height(pos)) / num_pipes, flux_dr);
-    // flux_dr = min(( 1.0 - height(pos + d_dr)) / num_pipes, flux_dr);
+    flux_dl = min(height(pos) / num_pipes, flux_dl);
+    flux_dl = max(-height(pos + d_dl) / num_pipes, flux_dl);
+    // flux_dl = max((-1.0 + height(pos + d_dl)) / num_pipes, flux_dl);
+    // flux_dl = min(( 1.0 - height(pos)) / num_pipes, flux_dl);
+
+    flux_dr = min(height(pos) / num_pipes, flux_dr);
+    flux_dr = max(-height(pos + d_dr) / num_pipes, flux_dr);
+    // flux_dr = max((-1.0 + height(pos + d_dr)) / num_pipes, flux_dr);
+    // flux_dr = min(( 1.0 - height(pos)) / num_pipes, flux_dr);
 
     // TODO experiment: Dampen extreme fluxes, hopefully equivalent to a low-pass on the frequency of the waves
     // float exp = 0;

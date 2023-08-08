@@ -9,7 +9,7 @@ varying vec2 pos;
 void vertex() {
 	pos = VERTEX.xz / 64.0 + 0.5;
 	float height = texture(heightmap, pos).x;
-	VERTEX.y += height * 5.0;
+	VERTEX.y += height * 20.0;
 	//COLOR.xyz = vec3(height / amplitude);
 	//COLOR.xyz = vec3((height - 0.5) / amplitude / 4.0,(height - 0.25) / amplitude / 4.0,1.0);
 	COLOR.r = (height - 0./3.) * 3.0;

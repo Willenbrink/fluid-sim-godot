@@ -8,13 +8,16 @@ varying vec2 pos;
 
 void vertex() {
 	pos = VERTEX.xz / 64.0 + 0.5;
-	float height = texture(heightmap, pos).x;
-	VERTEX.y += height * 20.0;
+	vec4 height = texture(heightmap, pos);
+	VERTEX.y += (height.x + height.y) * 20.0;
 	//COLOR.xyz = vec3(height / amplitude);
 	//COLOR.xyz = vec3((height - 0.5) / amplitude / 4.0,(height - 0.25) / amplitude / 4.0,1.0);
-	COLOR.r = (height - 0./3.) * 3.0;
-	COLOR.g = (height - 1./3.) * 3.0;
-	COLOR.b = (height - 2./3.) * 3.0;
+	COLOR.r = (height.x - 0./3.) * 3.0;
+	COLOR.g = (height.x - 1./3.) * 3.0;
+	COLOR.b = (height.x - 2./3.) * 3.0;
+	if(height.x < 0.01) {
+		COLOR.b = 1.0;
+	}
 }
 
 void fragment() {

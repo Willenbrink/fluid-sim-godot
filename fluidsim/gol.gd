@@ -92,7 +92,7 @@ func init() -> void:
 				lower = 15
 				if i > lower && i < upper && j > lower && j < upper:
 				#if i > 220 && i < 260 && j > 220 && j < 260:
-					image_height.set_pixel(i, j, Color(0.7, 0.0, 0.0, 1.0))
+					image_height.set_pixel(i, j, Color(0.3, 0.7, 0.0, 1.0))
 					pass
 		#image_height.set_pixel(50, 50, Color.RED)
 	

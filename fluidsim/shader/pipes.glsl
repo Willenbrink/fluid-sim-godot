@@ -2,8 +2,8 @@
 #version 450
 // layout(local_size_x = 8, local_size_y = 8) in;
 
-// R - Heightmap
-// G
+// R - Heightmap - Water
+// G - Heightmap - Terrain
 // B
 // A
 layout(set = 0, binding = 0, rgba32f) uniform image2D map_in;
@@ -16,8 +16,9 @@ layout(set = 0, binding = 2, rgba32f) uniform image2D map_out;
 layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
 layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
 
-float height(ivec2 cell_idx) {
-    return imageLoad(map_in, cell_idx).x;
+vec4 map_cell(ivec2 cell_idx) {
+    // ivec2 size = imageSize(map_in);
+    return imageLoad(map_in, cell_idx);
 }
 
 vec4 flux(ivec2 cell_idx) {
@@ -31,15 +32,18 @@ float calc_height(ivec2 pos) {
     ivec2 d_dl = ivec2(-1, 1);
     ivec2 d_dr = ivec2(1, 1);
 
-    return height(pos)
-        + flux(pos - d_r).r - flux(pos).r
+    return flux(pos - d_r).r - flux(pos).r
         + flux(pos - d_d).g - flux(pos).g
         + flux(pos - d_dl).b - flux(pos).b
         + flux(pos - d_dr).a - flux(pos).a;
 }
 
+vec4 calc_cell(ivec2 pos) {
+    return map_cell(pos) + vec4(calc_height(pos), 0.0, 0.0, 0.0);
+}
+
 void main() {
   ivec2 gidx = ivec2(gl_GlobalInvocationID.xy);
-  float height_new = calc_height(gidx);
-  imageStore(map_out, gidx, vec4(height_new, 0.0, 0.0, 1.0));
+  vec4 cell_new = calc_cell(gidx);
+  imageStore(map_out, gidx, cell_new);
 }

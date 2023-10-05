@@ -83,7 +83,7 @@ func init() -> void:
 	else:
 		for i in image_size.x:
 			for j in image_size.y:
-				image_height.set_pixel(i, j, Color(0.4, 0.0, 0.0, 1.0))
+				image_height.set_pixel(i, j, Color(0.2, 0.0, 0.0, 1.0))
 		for i in image_size.x:
 			for j in image_size.y:
 				var upper = image_size.x / 2 * 1.1
@@ -92,7 +92,7 @@ func init() -> void:
 				lower = 15
 				if i > lower && i < upper && j > lower && j < upper:
 				#if i > 220 && i < 260 && j > 220 && j < 260:
-					image_height.set_pixel(i, j, Color(0.6, 0.0, 0.0, 1.0))
+					image_height.set_pixel(i, j, Color(0.8, 0.0, 0.0, 1.0))
 					pass
 		#image_height.set_pixel(50, 50, Color.RED)
 	

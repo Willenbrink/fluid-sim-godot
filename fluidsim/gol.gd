@@ -55,6 +55,8 @@ var uniform_set_flux_B2A: RID
 var image_format := Image.FORMAT_RGBAF
 var data_format := RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
 
+var mouse_pos = null
+
 func _ready() -> void:
 	# We will be using our own RenderingDevice to handle the compute commands
 	rd = RenderingServer.create_local_rendering_device()
@@ -187,6 +189,11 @@ func free() -> void:
 func _process(_delta: float) -> void:
 	#place_fluid()
 	if (not Engine.is_editor_hint() || run_in_editor):
+		if mouse_pos != null:
+			var u = (mouse_pos.x + 256) / 512 * 100;
+			var v = (mouse_pos.z + 256) / 512 * 100;
+			print("Left", mouse_pos, u, v)
+			image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
 		compute(accel_factor if accelerate else 1)
 		show_texture();
 
@@ -241,17 +248,7 @@ func show_texture() -> void:
 
 
 func _on_static_body_3d_input_event(camera, event, position, normal, shape_idx):
-	if event is InputEventMouseButton and event.pressed:
-		match event.button_index:
-			MOUSE_BUTTON_LEFT:
-				var u = (position.x + 256) / 512 * 100;
-				var v = (position.z + 256) / 512 * 100;
-				print("Left", u, v)
-				image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
-				
-			MOUSE_BUTTON_RIGHT:
-				print("Right")
-			_:
-				print(position)
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		mouse_pos = position if event.pressed else null
 	else:
-		return
+		mouse_pos = position if mouse_pos != null else null

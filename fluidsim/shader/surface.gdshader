@@ -38,12 +38,16 @@ void vertex() {
 
 void fragment() {
 	float fresnel = sqrt(1.0 - dot(NORMAL, VIEW));
-    //COLOR.xyz = vec3(1.0,0.0,0.0);
 	RIM = 0.2;
-	METALLIC = 0.0;
-	ROUGHNESS = 0.01 * (1.0 - fresnel);
-	//ALBEDO = COLOR.xyz;
-	ALBEDO = vec3(0.01, 0.03, 0.05) + (0.1 * fresnel);
+	if(water) {
+		METALLIC = 0.0;
+		ROUGHNESS = 0.01 * (1.0 - fresnel);
+		ALBEDO = color.xyz + (0.1 * fresnel);
+		//ALPHA = 0.9;
+	} else {
+		ALBEDO = COLOR.xyz;
+	}
+    //COLOR.xyz = vec3(1.0,0.0,0.0);
 	//ALPHA = COLOR.w;
 	// NORMAL_MAP = texture(normalmap, pos).xyz;
 }

@@ -25,7 +25,7 @@ float height_total(ivec2 cell_idx) {
 float height_water(ivec2 cell_idx) {
     // ivec2 size = imageSize(map_in);
     vec4 map = imageLoad(map_in, cell_idx);
-    return map.x;
+    return max(map.x, 0.0);
 }
 
 vec4 flux(ivec2 cell_idx) {
@@ -42,7 +42,7 @@ vec4 calc_flux(ivec2 pos) {
 
     // A value of 1.0 that the whole difference is added to the current flux
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    float viscos = 0.000001;
+    float viscos = 0.00001;
     float d = 0.9998;
     // float d = 1.0;
     float flux_r = d * flux(pos).r + viscos * (height_total(pos) - height_total(pos + d_r));
@@ -50,7 +50,7 @@ vec4 calc_flux(ivec2 pos) {
     float flux_dl = d * flux(pos).b + viscos * (height_total(pos) - height_total(pos + d_dl));
     float flux_dr = d * flux(pos).a + viscos * (height_total(pos) - height_total(pos + d_dr));
 
-    int num_pipes = 2;
+    int num_pipes = 8;
 
     // TODO The upper limit is not checked because we never reach it.
     // Rather, I assume we never reach it. Verify this

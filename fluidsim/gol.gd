@@ -40,6 +40,9 @@ var data_height_B: PackedByteArray
 var data_flux_A: PackedByteArray
 var data_flux_B: PackedByteArray
 
+var image_height: Image
+var image_flux: Image
+
 var uniform_set_height_A2B: RID
 var uniform_set_height_B2A: RID
 var uniform_set_flux_A2B: RID
@@ -73,7 +76,7 @@ func init() -> void:
 	pipeline_flux = rd.compute_pipeline_create(shader_flux)
 	
 	# Data for compute shaders has to come as an array of bytes
-	var image_height := Image.create(image_size.x, image_size.y, false, image_format)
+	image_height = Image.create(image_size.x, image_size.y, false, image_format)
 	if use_noise:
 		var og_image := noise.get_image()
 		og_image.decompress()
@@ -83,7 +86,7 @@ func init() -> void:
 	else:
 		for i in image_size.x:
 			for j in image_size.y:
-				image_height.set_pixel(i, j, Color(0.2, 0.0, 0.0, 1.0))
+				image_height.set_pixel(i, j, Color(0.0, 0.0, 0.0, 1.0))
 		for i in image_size.x:
 			for j in image_size.y:
 				var upper = image_size.x / 2 * 1.1
@@ -92,7 +95,7 @@ func init() -> void:
 				lower = 15
 				if i > lower && i < upper && j > lower && j < upper:
 				#if i > 220 && i < 260 && j > 220 && j < 260:
-					image_height.set_pixel(i, j, Color(0.8, 0.0, 0.0, 1.0))
+					image_height.set_pixel(i, j, Color(0.0, 0.0, 0.0, 1.0))
 					pass
 		#image_height.set_pixel(50, 50, Color.RED)
 	
@@ -102,7 +105,7 @@ func init() -> void:
 	data_height_B = PackedByteArray()
 	data_height_B.resize(data_height_A.size())
 	
-	var image_flux := Image.create(image_size.x, image_size.y, false, image_format)
+	image_flux = Image.create(image_size.x, image_size.y, false, image_format)
 	data_flux_A = image_flux.get_data()
 	data_flux_B = PackedByteArray()
 	data_flux_B.resize(data_flux_A.size())	
@@ -190,8 +193,8 @@ func _process(_delta: float) -> void:
 #func place_fluid() -> void:
 
 func compute(num_iter) -> void:
-	rd.texture_update(tex_height_A, 0, data_height_A)
-	rd.texture_update(tex_flux_A, 0, data_flux_A)
+	rd.texture_update(tex_height_A, 0, image_height.get_data())
+	rd.texture_update(tex_flux_A, 0, image_flux.get_data())
 	for n in num_iter:
 		# Process:
 		# list begin: Start compute list to start recording our compute commands
@@ -222,12 +225,33 @@ func compute(num_iter) -> void:
 	# Confusing: At this point reading_A has already been flipped
 	data_height_A = rd.texture_get_data(tex_height_A if reading_A else tex_height_B, 0)
 	data_flux_A = rd.texture_get_data(tex_flux_A if reading_A else tex_flux_B, 0)
+	
+	image_height = Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
+	image_flux = Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
+	
 	reading_A = true
 
 func show_texture() -> void:
 	if show_flux:
-		var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
+		#var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
 		texture = ImageTexture.create_from_image(image_flux)
 	else:
-		var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
+		#var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
 		texture = ImageTexture.create_from_image(image_height)
+
+
+func _on_static_body_3d_input_event(camera, event, position, normal, shape_idx):
+	if event is InputEventMouseButton and event.pressed:
+		match event.button_index:
+			MOUSE_BUTTON_LEFT:
+				var u = (position.x + 256) / 512 * 100;
+				var v = (position.z + 256) / 512 * 100;
+				print("Left", u, v)
+				image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
+				
+			MOUSE_BUTTON_RIGHT:
+				print("Right")
+			_:
+				print(position)
+	else:
+		return

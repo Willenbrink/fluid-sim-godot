@@ -56,6 +56,8 @@ var image_format := Image.FORMAT_RGBAF
 var data_format := RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
 
 var mouse_pos = null
+var fill_water = true
+var brush_size = 3
 
 func _ready() -> void:
 	# We will be using our own RenderingDevice to handle the compute commands
@@ -79,6 +81,7 @@ func init() -> void:
 	
 	# Data for compute shaders has to come as an array of bytes
 	image_height = Image.create(image_size.x, image_size.y, false, image_format)
+	image_flux = Image.create(image_size.x, image_size.y, false, image_format)
 	if use_noise:
 		var og_image := noise.get_image()
 		og_image.decompress()
@@ -97,8 +100,11 @@ func init() -> void:
 				lower = 15
 				if i > lower && i < upper && j > lower && j < upper:
 				#if i > 220 && i < 260 && j > 220 && j < 260:
-					image_height.set_pixel(i, j, Color(0.0, 0.0, 0.0, 1.0))
+					image_height.set_pixel(i, j, Color(1.0, 0.0, 0.0, 1.0))
 					pass
+				if i < 10 || j < 10 || i > image_size.x - 10 || j > image_size.y - 10:
+					var h = 1.0 - min(i, j, image_size.x - i, image_size.y - j) / 10.0
+					image_height.set_pixel(i, j, Color(0.0, h, 0.0, 1.0))
 		#image_height.set_pixel(50, 50, Color.RED)
 	
 	reading_A = true
@@ -239,16 +245,18 @@ func compute(num_iter) -> void:
 	reading_A = true
 
 func show_texture() -> void:
-	if show_flux:
+	#if show_flux:
 		#var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
-		texture = ImageTexture.create_from_image(image_flux)
-	else:
+		#texture = ImageTexture.create_from_image(image_flux)
+	#else:
 		#var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
-		texture = ImageTexture.create_from_image(image_height)
+	texture = ImageTexture.create_from_image(image_height)
 
 
 func _on_static_body_3d_input_event(camera, event, position, normal, shape_idx):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and (
+		event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
 		mouse_pos = position if event.pressed else null
+		fill_water = event.button_index == MOUSE_BUTTON_LEFT
 	else:
 		mouse_pos = position if mouse_pos != null else null

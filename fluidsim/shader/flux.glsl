@@ -50,7 +50,9 @@ vec4 calc_flux(ivec2 pos) {
     float flux_dl = d * flux(pos).b + viscos * (height_total(pos) - height_total(pos + d_dl));
     float flux_dr = d * flux(pos).a + viscos * (height_total(pos) - height_total(pos + d_dr));
 
-    int num_pipes = 8;
+    // int num_pipes = 8;
+    // TODO this is broken, we need all 8 directions. How?
+    float num_pipes = max(1.0, (flux_r + flux_d + flux_dl + flux_dr) / height_water(pos) );
 
     // TODO The upper limit is not checked because we never reach it.
     // Rather, I assume we never reach it. Verify this

@@ -91,6 +91,7 @@ func init() -> void:
 		for i in image_size.x:
 			for j in image_size.y:
 				var water = water_image.get_pixel(i, j) * 0.1
+				water = Color(0.1, 0.0, 0.0)
 				var terrain = terrain_image.get_pixel(i, j)
 				image_height.set_pixel(i, j, Color(water.r, terrain.r, 0.0, 1.0))
 	else:
@@ -128,6 +129,7 @@ func init() -> void:
 	tex_map_format.height = image_size.y
 	tex_map_format.depth = 4
 	tex_map_format.format = data_format
+	tex_map_format.texture_type = RenderingDevice.TEXTURE_TYPE_2D
 	tex_map_format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT

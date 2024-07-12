@@ -50,7 +50,8 @@ var uniform_set_flux_B2A: RID
 
 @export var image_size: Vector2i
 @export var use_noise = false
-@export var noise: Texture2D
+@export var water_noise: Texture2D
+@export var terrain_noise: Texture2D
 # Keep those in sync!
 var image_format := Image.FORMAT_RGBAF
 var data_format := RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
@@ -83,11 +84,15 @@ func init() -> void:
 	image_height = Image.create(image_size.x, image_size.y, false, image_format)
 	image_flux = Image.create(image_size.x, image_size.y, false, image_format)
 	if use_noise:
-		var og_image := noise.get_image()
-		og_image.decompress()
+		var water_image := water_noise.get_image()
+		var terrain_image := terrain_noise.get_image()
+		water_image.decompress()
+		terrain_image.decompress()
 		for i in image_size.x:
 			for j in image_size.y:
-				image_height.set_pixel(i, j, og_image.get_pixel(i, j))
+				var water = water_image.get_pixel(i, j) * 0.1
+				var terrain = terrain_image.get_pixel(i, j)
+				image_height.set_pixel(i, j, Color(water.r, terrain.r, 0.0, 1.0))
 	else:
 		for i in image_size.x:
 			for j in image_size.y:

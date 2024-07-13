@@ -48,7 +48,7 @@ vec4 calc_flux(ivec2 pos) {
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
     float viscos = 0.0001;
     // Decay of previous flux
-    float d = 0.999;
+    float d = 0.998;
     // float d = 1.0;
     float flux_r = d * flux(pos).r + viscos * (h_t - height_total(pos + d_r));
     float flux_d = d * flux(pos).g + viscos * (h_t - height_total(pos + d_d));

@@ -1,19 +1,18 @@
 @tool
-extends TextureRect
+extends Area3D
 
 @export var run_in_editor = false;
 @export var step : bool :
 	get: return false
 	set(_value):
 		step = false
-		compute(1)
-		show_texture()
+		_process(1)
 @export var show_flux = false;
 @export var reset : bool :
 	get: return false
 	set(_value):
 		reset = false
-		init()
+		_ready()
 @export var accelerate = false;
 @export var accel_factor = 5;
 
@@ -24,6 +23,13 @@ var height_shader_file: RDShaderFile = preload("res://fluidsim/shader/pipes.glsl
 # Arrays where 0 stores the shader RID and 1 the pipeline RID
 var flux_shader_pipeline: Array
 var height_shader_pipeline: Array
+
+@export var texture_size = Vector2i(256,256)
+@export var water_noise: Texture2D
+@export var terrain_noise: Texture2D
+
+var texture_water : Texture2DRD
+var texture_terrain : Texture2DRD
 
 # We use two sets of uniforms, once for reading from A and writing to B
 # and the other way round. We need to keep track of this to render the data from the right buffer.
@@ -45,11 +51,6 @@ var uniform_set_height_A2B: RID
 var uniform_set_height_B2A: RID
 var uniform_set_flux_A2B: RID
 var uniform_set_flux_B2A: RID
-
-@export var image_size: Vector2i
-@export var use_noise = false
-@export var water_noise: Texture2D
-@export var terrain_noise: Texture2D
 # Keep those in sync!
 var image_format := Image.FORMAT_RGBAF
 var data_format := RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
@@ -59,13 +60,49 @@ var fill_water = true
 var brush_size = 3
 
 func _ready() -> void:
-	# We will be using our own RenderingDevice to handle the compute commands
-	rd = RenderingServer.create_local_rendering_device()
-	if not rd:
+	# Data for compute shaders has to come as an array of bytes
+	await water_noise.changed
+	await terrain_noise.changed
+	var water_image := water_noise.get_image()
+	var terrain_image := terrain_noise.get_image()
+	water_image.decompress()
+	terrain_image.decompress()
+	
+	image_height = Image.create(texture_size.x, texture_size.y, false, image_format)
+	image_flux = Image.create(texture_size.x, texture_size.y, false, image_format)
+	for i in texture_size.x:
+		for j in texture_size.y:
+			var water = water_image.get_pixel(i, j) * 0.1
+			water = Color(0.05, 0.0, 0.0)
+			var terrain = terrain_image.get_pixel(i, j)
+			image_height.set_pixel(i, j, Color(water.r, terrain.r, 0.0, 1.0))
+	
+	data_height_A = image_height.get_data()
+	data_height_B = PackedByteArray()
+	data_height_B.resize(data_height_A.size())
+	
+	image_flux = Image.create(texture_size.x, texture_size.y, false, image_format)
+	data_flux_A = image_flux.get_data()
+	data_flux_B = PackedByteArray()
+	data_flux_B.resize(data_flux_A.size())
+	
+	RenderingServer.call_on_render_thread(init_render.bind(data_height_A, data_height_B, data_flux_A, data_flux_B))
+	
+	var material_water = $WaterSurface.material_override
+	var material_terrain = $TerrainSurface.material_override
+	if not material_water or not material_terrain:
+		print("Failed to get material")
 		set_process(false)
-		print("Compute shaders are not available")
 		return
-	init()
+	texture_water = material_water.get_shader_parameter("heightmap")
+	texture_terrain = material_terrain.get_shader_parameter("heightmap")
+
+	#texture_water.texture_rd_rid = water_noise.get_rid()
+	texture_water.texture_rd_rid = tex_height_A
+	texture_terrain.texture_rd_rid = tex_height_A
+
+func init() -> void:
+	pass
 
 func create_shader(file: RDShaderFile):
 	var spirv := file.get_spirv()
@@ -73,62 +110,29 @@ func create_shader(file: RDShaderFile):
 	var pipeline = rd.compute_pipeline_create(shader)
 	return [shader, pipeline]
 	
-func init() -> void:
+func init_render(data_height_A, data_height_B, data_flux_A, data_flux_B) -> void:
+	# We will be using our own RenderingDevice to handle the compute commands
+	rd = RenderingServer.get_rendering_device()
+	if not rd:
+		set_process(false)
+		print("Compute shaders are not available")
+		return
+	
 	height_shader_pipeline = create_shader(height_shader_file)
 	flux_shader_pipeline = create_shader(flux_shader_file)
-	
-	# Data for compute shaders has to come as an array of bytes
-	image_height = Image.create(image_size.x, image_size.y, false, image_format)
-	image_flux = Image.create(image_size.x, image_size.y, false, image_format)
-	if use_noise:
-		var water_image := water_noise.get_image()
-		var terrain_image := terrain_noise.get_image()
-		water_image.decompress()
-		terrain_image.decompress()
-		for i in image_size.x:
-			for j in image_size.y:
-				var water = water_image.get_pixel(i, j) * 0.1
-				water = Color(0.05, 0.0, 0.0)
-				var terrain = terrain_image.get_pixel(i, j)
-				image_height.set_pixel(i, j, Color(water.r, terrain.r, 0.0, 1.0))
-	else:
-		for i in image_size.x:
-			for j in image_size.y:
-				image_height.set_pixel(i, j, Color(0.0, 0.0, 0.0, 1.0))
-		for i in image_size.x:
-			for j in image_size.y:
-				var upper = image_size.x / 2 * 1.1
-				var lower = image_size.x / 2 * 0.9
-				upper = 55
-				lower = 15
-				if i > lower && i < upper && j > lower && j < upper:
-				#if i > 220 && i < 260 && j > 220 && j < 260:
-					image_height.set_pixel(i, j, Color(1.0, 0.0, 0.0, 1.0))
-					pass
-				if i < 10 || j < 10 || i > image_size.x - 10 || j > image_size.y - 10:
-					var h = 1.0 - min(i, j, image_size.x - i, image_size.y - j) / 10.0
-					image_height.set_pixel(i, j, Color(0.0, h, 0.0, 1.0))
-		#image_height.set_pixel(50, 50, Color.RED)
+
 	
 	reading_A = true
-	
-	data_height_A = image_height.get_data()
-	data_height_B = PackedByteArray()
-	data_height_B.resize(data_height_A.size())
-	
-	image_flux = Image.create(image_size.x, image_size.y, false, image_format)
-	data_flux_A = image_flux.get_data()
-	data_flux_B = PackedByteArray()
-	data_flux_B.resize(data_flux_A.size())	
 
 	var tex_map_format := RDTextureFormat.new()
-	tex_map_format.width = image_size.x
-	tex_map_format.height = image_size.y
+	tex_map_format.width = texture_size.x
+	tex_map_format.height = texture_size.y
 	tex_map_format.depth = 4
 	tex_map_format.format = data_format
 	tex_map_format.texture_type = RenderingDevice.TEXTURE_TYPE_2D
 	tex_map_format.usage_bits = (
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
+		| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 		| RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
 	)
@@ -188,7 +192,6 @@ func init() -> void:
 	uniform_set_flux_A2B = rd.uniform_set_create(set_A2B, flux_shader_pipeline[0], 0)
 	uniform_set_flux_B2A = rd.uniform_set_create(set_B2A, flux_shader_pipeline[0], 0)
 	
-	show_texture();
 
 # func _exit_tree() -> void:
 # 	free()
@@ -204,8 +207,7 @@ func _process(_delta: float) -> void:
 			var v = (mouse_pos.z + 256) / 512 * 100;
 			print("Left", mouse_pos, u, v)
 			image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
-		compute(accel_factor if accelerate else 1)
-		show_texture();
+		RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1))
 
 #func place_fluid() -> void:
 
@@ -223,18 +225,21 @@ func compute(num_iter) -> void:
 		var compute_list := rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(compute_list, flux_shader_pipeline[1])
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_A2B if reading_A else uniform_set_flux_B2A, 0)
-		rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
+		rd.compute_list_dispatch(compute_list, texture_size.x, texture_size.y, 1)
 		rd.compute_list_end()
-		rd.submit()
-		rd.sync()  # Finish flux calc first
+		#rd.submit()
+		
+		rd.barrier(RenderingDevice.BARRIER_MASK_COMPUTE)
 		
 		compute_list = rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(compute_list, height_shader_pipeline[1])
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_height_A2B if reading_A else uniform_set_height_B2A, 0)
-		rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
+		rd.compute_list_dispatch(compute_list, texture_size.x, texture_size.y, 1)
 		rd.compute_list_end()
-		rd.submit()
-		rd.sync()
+		
+		#rd.sync()  # Finish flux calc first
+		#rd.submit()
+		#rd.sync()
 		
 		reading_A = !reading_A
 	
@@ -243,18 +248,11 @@ func compute(num_iter) -> void:
 	data_height_A = rd.texture_get_data(tex_height_A if reading_A else tex_height_B, 0)
 	data_flux_A = rd.texture_get_data(tex_flux_A if reading_A else tex_flux_B, 0)
 	
-	image_height = Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
-	image_flux = Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
+	image_height = Image.create_from_data(texture_size.x, texture_size.y, false, image_format, data_height_A)
+	image_flux = Image.create_from_data(texture_size.x, texture_size.y, false, image_format, data_flux_A)
 	
 	reading_A = true
 
-func show_texture() -> void:
-	#if show_flux:
-		#var image_flux := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_flux_A)
-		#texture = ImageTexture.create_from_image(image_flux)
-	#else:
-		#var image_height := Image.create_from_data(image_size.x, image_size.y, false, image_format, data_height_A)
-	texture = ImageTexture.create_from_image(image_height)
 
 
 func _on_static_body_3d_input_event(camera, event, position, normal, shape_idx):

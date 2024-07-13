@@ -39,7 +39,11 @@ float calc_height(ivec2 pos) {
 }
 
 vec4 calc_cell(ivec2 pos) {
-    return map_cell(pos) + vec4(calc_height(pos), 0.0, 0.0, 0.0);
+    vec4 cell = map_cell(pos);
+    float height = cell.x + calc_height(pos);
+    height = max(height, 0.0);
+    float alarm = height < 0.0 ? 1.0 : 0.0;
+    return vec4(height, cell.y, alarm, cell.w);
 }
 
 void main() {

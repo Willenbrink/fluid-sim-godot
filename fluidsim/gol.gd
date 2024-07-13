@@ -6,7 +6,7 @@ extends TextureRect
 	get: return false
 	set(_value):
 		step = false
-		compute(accel_factor)
+		compute(1)
 		show_texture()
 @export var show_flux = false;
 @export var reset : bool :
@@ -21,11 +21,9 @@ var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://fluidsim/shader/flux.glsl")
 var height_shader_file: RDShaderFile = preload("res://fluidsim/shader/pipes.glsl")
 
-var shader_flux: RID
-var shader_height: RID
-
-var pipeline_flux: RID
-var pipeline_height: RID
+# Arrays where 0 stores the shader RID and 1 the pipeline RID
+var flux_shader_pipeline: Array
+var height_shader_pipeline: Array
 
 # We use two sets of uniforms, once for reading from A and writing to B
 # and the other way round. We need to keep track of this to render the data from the right buffer.
@@ -68,17 +66,16 @@ func _ready() -> void:
 		print("Compute shaders are not available")
 		return
 	init()
+
+func create_shader(file: RDShaderFile):
+	var spirv := file.get_spirv()
+	var shader = rd.shader_create_from_spirv(spirv)
+	var pipeline = rd.compute_pipeline_create(shader)
+	return [shader, pipeline]
 	
 func init() -> void:
-	#self_modulate = Color(10000.0, 0000.0, 10000.0, 1.0)
-	# Create shader and pipeline
-	var height_spirv := height_shader_file.get_spirv()
-	shader_height = rd.shader_create_from_spirv(height_spirv)
-	pipeline_height = rd.compute_pipeline_create(shader_height)
-	
-	var flux_spirv := flux_shader_file.get_spirv()
-	shader_flux = rd.shader_create_from_spirv(flux_spirv)
-	pipeline_flux = rd.compute_pipeline_create(shader_flux)
+	height_shader_pipeline = create_shader(height_shader_file)
+	flux_shader_pipeline = create_shader(flux_shader_file)
 	
 	# Data for compute shaders has to come as an array of bytes
 	image_height = Image.create(image_size.x, image_size.y, false, image_format)
@@ -91,7 +88,7 @@ func init() -> void:
 		for i in image_size.x:
 			for j in image_size.y:
 				var water = water_image.get_pixel(i, j) * 0.1
-				water = Color(0.1, 0.0, 0.0)
+				water = Color(0.05, 0.0, 0.0)
 				var terrain = terrain_image.get_pixel(i, j)
 				image_height.set_pixel(i, j, Color(water.r, terrain.r, 0.0, 1.0))
 	else:
@@ -186,10 +183,10 @@ func init() -> void:
 	var set_B2A = [uniform_height_from_B, uniform_height_to_A,
 				   uniform_flux_from_B, uniform_flux_to_A]
 	
-	uniform_set_height_A2B = rd.uniform_set_create(set_A2B, shader_height, 0)
-	uniform_set_height_B2A = rd.uniform_set_create(set_B2A, shader_height, 0)
-	uniform_set_flux_A2B = rd.uniform_set_create(set_A2B, shader_flux, 0)
-	uniform_set_flux_B2A = rd.uniform_set_create(set_B2A, shader_flux, 0)
+	uniform_set_height_A2B = rd.uniform_set_create(set_A2B, height_shader_pipeline[0], 0)
+	uniform_set_height_B2A = rd.uniform_set_create(set_B2A, height_shader_pipeline[0], 0)
+	uniform_set_flux_A2B = rd.uniform_set_create(set_A2B, flux_shader_pipeline[0], 0)
+	uniform_set_flux_B2A = rd.uniform_set_create(set_B2A, flux_shader_pipeline[0], 0)
 	
 	show_texture();
 
@@ -224,7 +221,7 @@ func compute(num_iter) -> void:
 		# submit and sync: start and await computation
 		
 		var compute_list := rd.compute_list_begin()
-		rd.compute_list_bind_compute_pipeline(compute_list, pipeline_flux)
+		rd.compute_list_bind_compute_pipeline(compute_list, flux_shader_pipeline[1])
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_A2B if reading_A else uniform_set_flux_B2A, 0)
 		rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
 		rd.compute_list_end()
@@ -232,7 +229,7 @@ func compute(num_iter) -> void:
 		rd.sync()  # Finish flux calc first
 		
 		compute_list = rd.compute_list_begin()
-		rd.compute_list_bind_compute_pipeline(compute_list, pipeline_height)
+		rd.compute_list_bind_compute_pipeline(compute_list, height_shader_pipeline[1])
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_height_A2B if reading_A else uniform_set_height_B2A, 0)
 		rd.compute_list_dispatch(compute_list, image_size.x, image_size.y, 1)
 		rd.compute_list_end()

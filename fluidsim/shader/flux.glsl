@@ -25,7 +25,7 @@ float height_total(ivec2 cell_idx) {
 float height_water(ivec2 cell_idx) {
     // ivec2 size = imageSize(map_in);
     vec4 map = imageLoad(map_in, cell_idx);
-    return max(map.x, 0.0);
+    return map.x;
 }
 
 vec4 flux(ivec2 cell_idx) {
@@ -34,6 +34,10 @@ vec4 flux(ivec2 cell_idx) {
 }
 
 vec4 calc_flux(ivec2 pos) {
+    // Height water and height total
+    float h_w = height_water(pos);
+    float h_t = height_total(pos);
+
     // Different directions. Right, Down, Down-left, Down-right
     ivec2 d_r = ivec2(1, 0);
     ivec2 d_d = ivec2(0, 1);
@@ -42,17 +46,35 @@ vec4 calc_flux(ivec2 pos) {
 
     // A value of 1.0 that the whole difference is added to the current flux
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    float viscos = 0.00001;
-    float d = 0.9998;
+    float viscos = 0.0001;
+    // Decay of previous flux
+    float d = 0.999;
     // float d = 1.0;
-    float flux_r = d * flux(pos).r + viscos * (height_total(pos) - height_total(pos + d_r));
-    float flux_d = d * flux(pos).g + viscos * (height_total(pos) - height_total(pos + d_d));
-    float flux_dl = d * flux(pos).b + viscos * (height_total(pos) - height_total(pos + d_dl));
-    float flux_dr = d * flux(pos).a + viscos * (height_total(pos) - height_total(pos + d_dr));
+    float flux_r = d * flux(pos).r + viscos * (h_t - height_total(pos + d_r));
+    float flux_d = d * flux(pos).g + viscos * (h_t - height_total(pos + d_d));
+    float flux_dl = d * flux(pos).b + viscos * (h_t - height_total(pos + d_dl));
+    float flux_dr = d * flux(pos).a + viscos * (h_t - height_total(pos + d_dr));
+
+    // float inflow = max(flux_r, 0.0) + max(flux_d, 0.0) + max(flux_dl, 0.0) + max(flux_dr, 0.0);
+    // float outflow = min(flux_r, 0.0) + min(flux_d, 0.0) + min(flux_dl, 0.0) + min(flux_dr, 0.0);
+    // float h_w_out = h_w + outflow;
+
+    // if(h_w_out < 0.0) {
+    //     if(flux_r < 0.0)
+    //         flux_r *= h_w / outflow;
+    //     if(flux_d < 0.0)
+    //         flux_d *= h_w / outflow;
+    //     if(flux_dl < 0.0)
+    //         flux_dl *= h_w / outflow;
+    //     if(flux_dr < 0.0)
+    //         flux_dr *= h_w / outflow;
+    // }
+
 
     // int num_pipes = 8;
     // TODO this is broken, we need all 8 directions. How?
-    float num_pipes = max(1.0, (flux_r + flux_d + flux_dl + flux_dr) / height_water(pos) );
+    // float num_pipes = max(1.0, (flux_r + flux_d + flux_dl + flux_dr) / h_w );
+    float num_pipes = 8.0;
 
     // TODO The upper limit is not checked because we never reach it.
     // Rather, I assume we never reach it. Verify this

@@ -27,6 +27,11 @@ void vertex() {
     VERTEX.y += height.y * heightscale;
 	water_height = height.x;
 	COLOR = color;
+	if(height.z > 0.0
+		&& false) {
+		COLOR = vec4(1.0, 0.0, 0.0, 1.0);
+		water_height = 1.0;
+	}
     NORMAL = calc_normal(UV);
 }
 
@@ -34,9 +39,9 @@ void fragment() {
 	RIM = 0.5;
 	METALLIC = 0.0;
 	ROUGHNESS = 0.1;
-	ALBEDO = color.xyz;
+	ALBEDO = COLOR.xyz;
 	ALPHA = 1.0;
-	if(water_height <= 0.005) {
+	if(water_height <= 0.002) {
 		ALPHA = water_height * 50.0;
 	}
 }

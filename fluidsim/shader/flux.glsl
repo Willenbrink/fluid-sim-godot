@@ -6,15 +6,15 @@
 // G - Heightmap - Terrain
 // B
 // A
-layout(set = 0, binding = 0, rgba32f) uniform image2D map_in;
-layout(set = 0, binding = 2, rgba32f) uniform image2D map_out;
+layout(set = 0, binding = 0, rgba32f) readonly restrict uniform image2D map_in;
+layout(set = 1, binding = 0, rgba32f) readonly restrict uniform image2D map_out;
 
 // R - Flux left
 // G - Flux right
 // B - Flux top
 // A - Flux bottom
-layout(set = 0, binding = 1, rgba32f) uniform image2D flux_in;
-layout(set = 0, binding = 3, rgba32f) uniform image2D flux_out;
+layout(set = 2, binding = 0, rgba32f) readonly restrict uniform image2D flux_in;
+layout(set = 3, binding = 0, rgba32f) uniform image2D flux_out;
 
 float height_total(ivec2 cell_idx) {
     // ivec2 size = imageSize(map_in);

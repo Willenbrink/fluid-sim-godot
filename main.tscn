@@ -19,7 +19,7 @@ generate_mipmaps = false
 noise = SubResource("FastNoiseLite_tbyqg")
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_cudi2"]
-texture_rd_rid = RID(979162349182815)
+texture_rd_rid = RID(7389156225326944)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4te7w"]
 render_priority = 0
@@ -34,7 +34,7 @@ subdivide_width = 512
 subdivide_depth = 512
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_l4f3o"]
-texture_rd_rid = RID(979162349182815)
+texture_rd_rid = RID(7389156225326944)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_45cfq"]
 render_priority = 0
@@ -62,6 +62,8 @@ script = ExtResource("2_2uc2b")
 
 [node name="Area3D" type="Area3D" parent="."]
 script = ExtResource("6_ea1n8")
+accelerate = true
+accel_factor = 8
 texture_size = Vector2i(512, 512)
 noise_water = SubResource("NoiseTexture2D_8ki4g")
 noise_terrain = SubResource("NoiseTexture2D_vlaij")

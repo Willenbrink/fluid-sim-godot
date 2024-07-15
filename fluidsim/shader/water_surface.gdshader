@@ -41,7 +41,11 @@ void fragment() {
 	ROUGHNESS = 0.1;
 	ALBEDO = COLOR.xyz;
 	ALPHA = 1.0;
-	if(water_height <= 0.002) {
-		ALPHA = water_height * 50.0;
+	float threshold = 0.00001;
+	// TODO ideally: hard boundaries when delta water_height is large (FLUX?!)
+	// This gives smooth boundaries near streams (which are often only one cell)
+	// but hard ones around lakes
+	if(water_height <= threshold) {
+		ALPHA = water_height / threshold;
 	}
 }

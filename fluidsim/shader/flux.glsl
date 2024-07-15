@@ -48,7 +48,7 @@ vec4 calc_flux(ivec2 pos) {
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
     float viscos = 0.0001;
     // Decay of previous flux
-    float d = 0.998;
+    float d = 0.999;
     // float d = 1.0;
     float flux_r = d * flux(pos).r + viscos * (h_t - height_total(pos + d_r));
     float flux_d = d * flux(pos).g + viscos * (h_t - height_total(pos + d_d));
@@ -87,22 +87,22 @@ vec4 calc_flux(ivec2 pos) {
     // max( -height(pos_right), flux_right)
     // This latter form is the one used here
     flux_r = min(height_water(pos) / num_pipes, flux_r);
-    flux_r = max(-height_water(pos + d_r) / num_pipes, flux_r);
+    flux_r = - min(height_water(pos + d_r) / num_pipes, -flux_r);
     // flux_r = max((-1.0 + height(pos + d_r)) / num_pipes, flux_r);
     // flux_r = min(( 1.0 - height(pos)) / num_pipes, flux_r);
 
     flux_d = min(height_water(pos) / num_pipes, flux_d);
-    flux_d = max(-height_water(pos + d_d) / num_pipes, flux_d);
+    flux_d = - min(height_water(pos + d_d) / num_pipes, -flux_d);
     // flux_d = max((-1.0 + height(pos + d_d)) / num_pipes, flux_d);
     // flux_d = min(( 1.0 - height(pos)) / num_pipes, flux_d);
 
     flux_dl = min(height_water(pos) / num_pipes, flux_dl);
-    flux_dl = max(-height_water(pos + d_dl) / num_pipes, flux_dl);
+    flux_dl = - min(height_water(pos + d_dl) / num_pipes, -flux_dl);
     // flux_dl = max((-1.0 + height(pos + d_dl)) / num_pipes, flux_dl);
     // flux_dl = min(( 1.0 - height(pos)) / num_pipes, flux_dl);
 
     flux_dr = min(height_water(pos) / num_pipes, flux_dr);
-    flux_dr = max(-height_water(pos + d_dr) / num_pipes, flux_dr);
+    flux_dr = - min(height_water(pos + d_dr) / num_pipes, -flux_dr);
     // flux_dr = max((-1.0 + height(pos + d_dr)) / num_pipes, flux_dr);
     // flux_dr = min(( 1.0 - height(pos)) / num_pipes, flux_dr);
 

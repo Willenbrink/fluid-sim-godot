@@ -133,11 +133,20 @@ func init_render(heightmap_initial) -> void:
 	rd.texture_clear(tex_flux_in, Color(0, 0, 0, 0), 0, 1, 0, 1)
 	rd.texture_clear(tex_flux_out, Color(0, 0, 0, 0), 0, 1, 0, 1)
 	
-	
 	uniform_set_height_in = create_uniform_set(tex_height_in, flux_shader_pipeline[0])
 	uniform_set_height_out = create_uniform_set(tex_height_out, flux_shader_pipeline[0])
 	uniform_set_flux_in = create_uniform_set(tex_flux_in, flux_shader_pipeline[0])
 	uniform_set_flux_out = create_uniform_set(tex_flux_out, flux_shader_pipeline[0])
+	
+	# Great fun, there are no primitives, only buffers
+# https://old.reddit.com/r/godot/comments/1510ge1/uniforms_vs_buffers_in_compute_shaders_and_how_do/kxmxtqz/
+	
+	#var buffer := rd.storage_buffer_create(16, [0.1, 0.2, 0.3, 0.4])
+	#var uniform_fluid = RDUniform.new()
+	#uniform_fluid.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
+	#uniform_fluid.binding = 0
+	#uniform_fluid.add_id(buffer)
+	#uniform_set_variables = rd.uniform_set_create([uniform_fluid], flux_shader_pipeline[0], 0)
 	
 
 # func _exit_tree() -> void:

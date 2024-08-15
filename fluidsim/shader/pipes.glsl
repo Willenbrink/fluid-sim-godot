@@ -22,7 +22,7 @@ vec4 map_cell(ivec2 cell_idx) {
 }
 
 vec4 flux(ivec2 cell_idx) {
-    return imageLoad(flux_in, cell_idx);
+    return imageLoad(flux_out, cell_idx);
 }
 
 float calc_height(ivec2 pos) {

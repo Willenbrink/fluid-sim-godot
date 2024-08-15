@@ -46,11 +46,10 @@ vec4 calc_flux(ivec2 pos) {
 
     // A value of 1.0 that the whole difference is added to the current flux
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    // TODO look at energy in system
-    float viscos = 0.0011;
-    // Decay of previous flux
-    float d = 0.99;
-    // float d = 1.0;
+    float viscos = 0.0001;
+    // Decay of previous flux. Not necessary after all.
+    // In a correct simulation waves can annihilate each other and so waters will calm even without decay.
+    float d = 1.0;
     float flux_r = d * flux(pos).r + viscos * (h_t - height_total(pos + d_r));
     float flux_d = d * flux(pos).g + viscos * (h_t - height_total(pos + d_d));
     float flux_dl = d * flux(pos).b + viscos * (h_t - height_total(pos + d_dl)) / 1.41;

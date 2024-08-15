@@ -46,14 +46,15 @@ vec4 calc_flux(ivec2 pos) {
 
     // A value of 1.0 that the whole difference is added to the current flux
     // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    float viscos = 0.0001;
+    // TODO look at energy in system
+    float viscos = 0.0011;
     // Decay of previous flux
-    float d = 0.999;
+    float d = 0.99;
     // float d = 1.0;
     float flux_r = d * flux(pos).r + viscos * (h_t - height_total(pos + d_r));
     float flux_d = d * flux(pos).g + viscos * (h_t - height_total(pos + d_d));
-    float flux_dl = d * flux(pos).b + viscos * (h_t - height_total(pos + d_dl));
-    float flux_dr = d * flux(pos).a + viscos * (h_t - height_total(pos + d_dr));
+    float flux_dl = d * flux(pos).b + viscos * (h_t - height_total(pos + d_dl)) / 1.41;
+    float flux_dr = d * flux(pos).a + viscos * (h_t - height_total(pos + d_dr)) / 1.41;
 
     // float inflow = max(flux_r, 0.0) + max(flux_d, 0.0) + max(flux_dl, 0.0) + max(flux_dr, 0.0);
     // float outflow = min(flux_r, 0.0) + min(flux_d, 0.0) + min(flux_dl, 0.0) + min(flux_dr, 0.0);
@@ -74,7 +75,10 @@ vec4 calc_flux(ivec2 pos) {
     // int num_pipes = 8;
     // TODO this is broken, we need all 8 directions. How?
     // float num_pipes = max(1.0, (flux_r + flux_d + flux_dl + flux_dr) / h_w );
-    float num_pipes = 8.0;
+    float sqrt2_inv = 1.0 / 1.41;
+    // 8 pipes in total but 4 of them are orthogonal and 4 four diagonal. The diagonal ones are prioritized less
+    float num_pipes = 4 * (1.0 + sqrt2_inv);
+    //num_pipes = 1.0;
 
     // TODO The upper limit is not checked because we never reach it.
     // Rather, I assume we never reach it. Verify this
@@ -96,13 +100,13 @@ vec4 calc_flux(ivec2 pos) {
     // flux_d = max((-1.0 + height(pos + d_d)) / num_pipes, flux_d);
     // flux_d = min(( 1.0 - height(pos)) / num_pipes, flux_d);
 
-    flux_dl = min(height_water(pos) / num_pipes, flux_dl);
-    flux_dl = - min(height_water(pos + d_dl) / num_pipes, -flux_dl);
+    flux_dl = min(height_water(pos) / num_pipes * sqrt2_inv, flux_dl);
+    flux_dl = - min(height_water(pos + d_dl) / num_pipes * sqrt2_inv, -flux_dl);
     // flux_dl = max((-1.0 + height(pos + d_dl)) / num_pipes, flux_dl);
     // flux_dl = min(( 1.0 - height(pos)) / num_pipes, flux_dl);
 
-    flux_dr = min(height_water(pos) / num_pipes, flux_dr);
-    flux_dr = - min(height_water(pos + d_dr) / num_pipes, -flux_dr);
+    flux_dr = min(height_water(pos) / num_pipes * sqrt2_inv, flux_dr);
+    flux_dr = - min(height_water(pos + d_dr) / num_pipes * sqrt2_inv, -flux_dr);
     // flux_dr = max((-1.0 + height(pos + d_dr)) / num_pipes, flux_dr);
     // flux_dr = min(( 1.0 - height(pos)) / num_pipes, flux_dr);
 

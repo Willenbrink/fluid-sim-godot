@@ -1,11 +1,19 @@
 shader_type spatial;
 
+uniform bool fluxvis;
+uniform bool energyvis;
 uniform vec4 color;
 uniform float heightscale;
 uniform sampler2D heightmap;
+uniform sampler2D fluxmap;
 
 float sum(vec2 xy) {
 	return xy.x + xy.y;
+}
+
+float mag(vec4 v) {
+	vec4 sq = v * v;
+	return sqrt(sq.x + sq.y + sq.z + sq.w);
 }
 
 vec3 calc_normal(vec2 uv) { 
@@ -21,10 +29,18 @@ vec3 calc_normal(vec2 uv) {
 }
 
 varying float water_height;
+varying flat vec4 color2;
 void vertex() {
 	vec4 height = texture(heightmap, UV);
-   	VERTEX.y += height.x * heightscale;
+	vec4 flux = texture(fluxmap, UV);
+	
     VERTEX.y += height.y * heightscale;
+	if(energyvis) {
+		VERTEX.y += height.x * heightscale + mag(flux) * 10000.0;
+	} else {
+   		VERTEX.y += height.x * heightscale;
+	}
+	VERTEX.y += 0.001 * heightscale;
 	water_height = height.x;
 	COLOR = color;
 	if(height.z > 0.0
@@ -32,6 +48,10 @@ void vertex() {
 		COLOR = vec4(1.0, 0.0, 0.0, 1.0);
 		water_height = 1.0;
 	}
+	float mult = 1000.;
+	color2.r = flux.x * mult;
+	color2.g = flux.y * mult;
+	color2.b = flux.z * mult;
     NORMAL = calc_normal(UV);
 }
 
@@ -39,13 +59,16 @@ void fragment() {
 	RIM = 0.5;
 	METALLIC = 0.0;
 	ROUGHNESS = 0.1;
-	ALBEDO = COLOR.xyz;
+	if(fluxvis)
+		ALBEDO = color2.xyz;
+	else
+		ALBEDO = COLOR.xyz;
 	ALPHA = 1.0;
-	float threshold = 0.00001;
+	float threshold = 0.001;
 	// TODO ideally: hard boundaries when delta water_height is large (FLUX?!)
 	// This gives smooth boundaries near streams (which are often only one cell)
 	// but hard ones around lakes
-	if(water_height <= threshold) {
+	if(water_height <= threshold && !energyvis) {
 		ALPHA = water_height / threshold;
 	}
 }

@@ -6,7 +6,7 @@ extends Area3D
 	get: return false
 	set(_value):
 		step = false
-		_process(1)
+		process_real()
 @export var show_flux = false;
 @export var reset : bool :
 	get: return false
@@ -29,10 +29,9 @@ var height_shader_pipeline: Array
 @export var noise_terrain: Texture2D
 
 var texture_water : Texture2DRD
+var tex_flux_water : Texture2DRD
 var texture_terrain : Texture2DRD
 
-# We use two sets of uniforms, once for reading from A and writing to B
-# and the other way round. We need to keep track of this to render the data from the right buffer.
 var tex_height_in: RID
 var tex_height_out: RID
 var tex_flux_in: RID
@@ -80,8 +79,10 @@ func init() -> void:
 		set_process(false)
 		return
 	texture_water = material_water.get_shader_parameter("heightmap")
+	tex_flux_water = material_water.get_shader_parameter("fluxmap")
 	texture_terrain = material_terrain.get_shader_parameter("heightmap")
 	texture_water.texture_rd_rid = tex_height_in
+	tex_flux_water.texture_rd_rid = tex_flux_in
 	texture_terrain.texture_rd_rid = tex_height_in
 
 func create_shader(file: RDShaderFile):
@@ -151,16 +152,17 @@ func free() -> void:
 func _process(_delta: float) -> void:
 	#place_fluid()
 	if (not Engine.is_editor_hint() || run_in_editor):
-		if mouse_pos != null:
-			var u = (mouse_pos.x + 256) / 512 * 100;
-			var v = (mouse_pos.z + 256) / 512 * 100;
-			print("Left", mouse_pos, u, v)
-			#image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
-		RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1))
-		#texture_water.texture_rd_rid = tex_height_A
-		#texture_terrain.texture_rd_rid = tex_height_A
+		process_real()
 
-#func place_fluid() -> void:
+func process_real():
+	if mouse_pos != null:
+		var u = (mouse_pos.x + 256) / 512 * 100;
+		var v = (mouse_pos.z + 256) / 512 * 100;
+		print("Left", mouse_pos, u, v)
+		#image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
+	RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1))
+	#texture_water.texture_rd_rid = tex_height_A
+	#texture_terrain.texture_rd_rid = tex_height_A
 
 func compute(num_iter) -> void:
 	for n in num_iter:

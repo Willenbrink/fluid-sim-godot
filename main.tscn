@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://qlmh4im4lm3e"]
+[gd_scene load_steps=17 format=3 uid="uid://qlmh4im4lm3e"]
 
 [ext_resource type="Script" path="res://controls/camera.gd" id="2_2uc2b"]
 [ext_resource type="Shader" path="res://fluidsim/shader/terrain_surface.gdshader" id="4_y0lmg"]
@@ -18,15 +18,21 @@ noise = SubResource("FastNoiseLite_vwu1t")
 generate_mipmaps = false
 noise = SubResource("FastNoiseLite_tbyqg")
 
+[sub_resource type="Texture2DRD" id="Texture2DRD_7ayt4"]
+texture_rd_rid = RID(6290774173950526)
+
 [sub_resource type="Texture2DRD" id="Texture2DRD_cudi2"]
-texture_rd_rid = RID(7389156225326944)
+texture_rd_rid = RID(6290765584015903)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4te7w"]
 render_priority = 0
 shader = ExtResource("5_qkbso")
+shader_parameter/fluxvis = false
+shader_parameter/energyvis = false
 shader_parameter/color = Vector4(0.01, 0.03, 0.05, 1)
 shader_parameter/heightscale = 50.0
 shader_parameter/heightmap = SubResource("Texture2DRD_cudi2")
+shader_parameter/fluxmap = SubResource("Texture2DRD_7ayt4")
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_mtqtp"]
 size = Vector2(512, 512)
@@ -34,7 +40,7 @@ subdivide_width = 512
 subdivide_depth = 512
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_l4f3o"]
-texture_rd_rid = RID(7389156225326944)
+texture_rd_rid = RID(6290765584015903)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_45cfq"]
 render_priority = 0
@@ -62,8 +68,6 @@ script = ExtResource("2_2uc2b")
 
 [node name="Area3D" type="Area3D" parent="."]
 script = ExtResource("6_ea1n8")
-accelerate = true
-accel_factor = 8
 texture_size = Vector2i(512, 512)
 noise_water = SubResource("NoiseTexture2D_8ki4g")
 noise_terrain = SubResource("NoiseTexture2D_vlaij")

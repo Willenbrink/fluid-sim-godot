@@ -71,13 +71,9 @@ vec4 calc_flux(ivec2 pos) {
     // }
 
 
-    // int num_pipes = 8;
-    // TODO this is broken, we need all 8 directions. How?
-    // float num_pipes = max(1.0, (flux_r + flux_d + flux_dl + flux_dr) / h_w );
     float sqrt2_inv = 1.0 / 1.41;
     // 8 pipes in total but 4 of them are orthogonal and 4 four diagonal. The diagonal ones are prioritized less
     float num_pipes = 4 * (1.0 + sqrt2_inv);
-    //num_pipes = 1.0;
 
     // TODO The upper limit is not checked because we never reach it.
     // Rather, I assume we never reach it. Verify this

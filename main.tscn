@@ -9,20 +9,24 @@
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_vwu1t"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_8ki4g"]
+width = 2048
+height = 2048
 generate_mipmaps = false
 noise = SubResource("FastNoiseLite_vwu1t")
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tbyqg"]
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_vlaij"]
+width = 2048
+height = 2048
 generate_mipmaps = false
 noise = SubResource("FastNoiseLite_tbyqg")
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_7ayt4"]
-texture_rd_rid = RID(3606668722053144)
+texture_rd_rid = RID(5936671300264028)
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_cudi2"]
-texture_rd_rid = RID(3606660132118555)
+texture_rd_rid = RID(5936662710329439)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4te7w"]
 render_priority = 0
@@ -40,7 +44,7 @@ subdivide_width = 512
 subdivide_depth = 512
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_l4f3o"]
-texture_rd_rid = RID(3606660132118555)
+texture_rd_rid = RID(5936662710329439)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_45cfq"]
 render_priority = 0
@@ -69,8 +73,8 @@ script = ExtResource("2_2uc2b")
 [node name="Area3D" type="Area3D" parent="."]
 script = ExtResource("6_ea1n8")
 accelerate = true
-accel_factor = 30
-texture_size = Vector2i(512, 512)
+accel_factor = 20
+texture_size = Vector2i(128, 128)
 noise_water = SubResource("NoiseTexture2D_8ki4g")
 noise_terrain = SubResource("NoiseTexture2D_vlaij")
 

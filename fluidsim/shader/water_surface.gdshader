@@ -30,9 +30,10 @@ vec3 calc_normal(vec2 uv) {
 
 varying float water_height;
 varying flat vec4 color2;
+varying vec4 flux;
 void vertex() {
 	vec4 height = texture(heightmap, UV);
-	vec4 flux = texture(fluxmap, UV);
+	flux = texture(fluxmap, UV);
 	
     VERTEX.y += height.y * heightscale;
 	if(energyvis) {

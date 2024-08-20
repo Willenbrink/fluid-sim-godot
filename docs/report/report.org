@@ -1,5 +1,6 @@
 #+title: Realtime Water Simulation using the Pipe Method
-#+author: Sebastian Willenbrink
+#+author: Sebastian Willenbrink 19990601-7851
+#+email: stwi@kth.se
 
 * Abstract
 In this paper, we introduce a variant of the pipe method and implement it in the game engine Godot. The pipe method simulates water flow using a heightmap and allows actual shifts in water masses instead of visually adding waves to a static surface. We improve on the original method by using bi-directional pipes, allowing us to compute flow to eight neighbors per cell instead of only four. We use compute shaders to implement the method in Godot 4.2. Despite Godots compute shader support being in its infancy, we achieve high performance and simulate a map consisting of 2048x2048 cells approximately 3x faster than realtime.
@@ -68,6 +69,16 @@ Negative float values that should not be possible but occur anyway were a signif
 Debugging shaders is quite tedious and error prone. I noticed only quite late that the simulation was fundamentally broken due to using the flux values from the last frame in the water height update. This cased quite a lot of instability, leading to numerous attempts to fix this despite the solution being quite simple. Setting up good debugging visualizations would have helped but specifically a one-frame difference in the flux values is hard to debug even with debug visualizations. Debugging is especially tedious with rarely occuring issues (such as negative water heights through float rounding).
 *** Compute Shaders in Godot
 Compute shaders in Godot are far from seamless. A lot of documentation is very bare-bones, examples only touch on basics and delving into Vulkan documentation to understand the Godot API costs time. Delaying the project for some time led to better support making the project highly performant. An area with 2048x2048 cells can be run at 3x acceleration at 60fps on a GTX 1080Ti, leaving significant margin for other aspects of a game.[fn:: Note that the acceleration does not render everything, it only computes the flow and water heights 3 times every single frame]
+
+#+CAPTION: Rough seas shortly after the simulation start. The initial scenario is a terrain covered in an even layer of water.
+[[./rough-sea.png]]
+#+CAPTION: Calm seas long after the simulation start. Even with very low dampening, the sea is essentially mirrorlike.
+[[./calm-sea.png]]
+#+CAPTION: Rivers can be seen flowing from the top right to the left lake and to the bottom left which in turn feeds into the left lake. Rivers emerge as a natural phenomenon in the simulation when water flows from one spot to another. Their appearance is enhanced by highlighting areas with high flux. Otherwise, the river would barely be visible due to its low depth. Note that this scenario did not add water during the simulation, as such the rivers will naturally disappear once the top lakes have been emptied.
+[[./river.png]]
+#+CAPTION: Here, small waves can be seen in the center of the image as a result of the river feeding water in to the lake.
+[[./river-waves.png]]
+
 
 * Future Work
 ** Layering wave simulation on top

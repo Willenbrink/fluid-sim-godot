@@ -15,6 +15,7 @@ extends Area3D
 		init()
 @export var accelerate = false;
 @export var accel_factor = 5;
+@export var water_initial_height = 0.05;
 
 var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://fluidsim/shader/flux.glsl")
@@ -25,7 +26,6 @@ var flux_shader_pipeline: Array
 var height_shader_pipeline: Array
 
 @export var texture_size = Vector2i(256,256)
-@export var noise_water: Texture2D
 @export var noise_terrain: Texture2D
 
 var texture_water : Texture2DRD
@@ -52,21 +52,17 @@ var brush_size = 3
 
 func _ready() -> void:
 	# Data for compute shaders has to come as an array of bytes
-	await noise_water.changed
 	await noise_terrain.changed
 	init()
 
 func init() -> void:
-	var water_image := noise_water.get_image()
 	var terrain_image := noise_terrain.get_image()
-	water_image.decompress()
 	terrain_image.decompress()
 	
 	var heightmap = Image.create(texture_size.x, texture_size.y, false, image_format)
 	for i in texture_size.x:
 		for j in texture_size.y:
-			var water = water_image.get_pixel(i, j) * 0.1
-			water = Color(0.05, 0.0, 0.0)
+			var water = Color(water_initial_height, 0.0, 0.0, 0.0)
 			var terrain = terrain_image.get_pixel(i, j)
 			heightmap.set_pixel(i, j, Color(water.r, terrain.r, 0.0, 1.0))
 	
@@ -112,7 +108,7 @@ func init_render(heightmap_initial) -> void:
 	var tex_map_format := RDTextureFormat.new()
 	tex_map_format.width = texture_size.x
 	tex_map_format.height = texture_size.y
-	tex_map_format.depth = 4
+	tex_map_format.depth = 1
 	tex_map_format.format = data_format
 	tex_map_format.texture_type = RenderingDevice.TEXTURE_TYPE_2D
 	tex_map_format.usage_bits = (
@@ -128,7 +124,6 @@ func init_render(heightmap_initial) -> void:
 	tex_flux_in = rd.texture_create(tex_map_format, tex_view, [])
 	tex_flux_out = rd.texture_create(tex_map_format, tex_view, [])
 	
-	#rd.texture_clear(tex_height_A, Color(0, 0, 0, 0), 0, 1, 0, 1)
 	rd.texture_clear(tex_height_out, Color(0, 0, 0, 0), 0, 1, 0, 1)
 	rd.texture_clear(tex_flux_in, Color(0, 0, 0, 0), 0, 1, 0, 1)
 	rd.texture_clear(tex_flux_out, Color(0, 0, 0, 0), 0, 1, 0, 1)
@@ -164,16 +159,26 @@ func _process(_delta: float) -> void:
 		process_real()
 
 func process_real():
-	if mouse_pos != null:
-		var u = (mouse_pos.x + 256) / 512 * 100;
-		var v = (mouse_pos.z + 256) / 512 * 100;
-		print("Left", mouse_pos, u, v)
+	# Based on https://github.com/godotengine/godot-demo-projects/blob/4.2-31d1c0c/compute/texture/water_plane/water_plane.gd
+	var push_constant : PackedFloat32Array = PackedFloat32Array()
+	if(mouse_pos != null):
+		var u : int = (mouse_pos.x + 512 / 2) / 512 * texture_size.x;
+		var v : int = (mouse_pos.z + 512 / 2) / 512 * texture_size.y;
+		push_constant.push_back(u)
+		push_constant.push_back(v)
+		push_constant.push_back(0.0)
+		push_constant.push_back(1.0)
+	else:
+		push_constant.push_back(0.0)
+		push_constant.push_back(0.0)
+		push_constant.push_back(0.0)
+		push_constant.push_back(0.0)
 		#image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
-	RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1))
+	RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1, push_constant))
 	#texture_water.texture_rd_rid = tex_height_A
 	#texture_terrain.texture_rd_rid = tex_height_A
 
-func compute(num_iter) -> void:
+func compute(num_iter, push_constant) -> void:
 	for n in num_iter:
 		# Process:
 		# list begin: Start compute list to start recording our compute commands
@@ -190,7 +195,6 @@ func compute(num_iter) -> void:
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_out, 3)
 		rd.compute_list_dispatch(compute_list, texture_size.x, texture_size.y, 1)
 		
-		#rd.barrier(RenderingDevice.BARRIER_MASK_COMPUTE)
 		rd.compute_list_add_barrier(compute_list)
 		
 		rd.compute_list_bind_compute_pipeline(compute_list, height_shader_pipeline[1])
@@ -198,6 +202,7 @@ func compute(num_iter) -> void:
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_height_out, 1)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_in, 2)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_out, 3)
+		rd.compute_list_set_push_constant(compute_list, push_constant.to_byte_array(), push_constant.size() * 4)
 		rd.compute_list_dispatch(compute_list, texture_size.x, texture_size.y, 1)
 		rd.compute_list_end()
 		
@@ -207,14 +212,11 @@ func compute(num_iter) -> void:
 		uniform_set_flux_out = flux_tmp
 		uniform_set_height_in = uniform_set_height_out
 		uniform_set_height_out = height_tmp
-	#texture_water.texture_rd_rid = tex_height_in
-	#texture_terrain.texture_rd_rid = tex_height_in
-
-
-func _on_static_body_3d_input_event(camera, event, position, normal, shape_idx):
+	
+func _input_event(camera, event, position, normal, shape_idx):
 	if event is InputEventMouseButton and (
 		event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
 		mouse_pos = position if event.pressed else null
 		fill_water = event.button_index == MOUSE_BUTTON_LEFT
-	else:
-		mouse_pos = position if mouse_pos != null else null
+	elif mouse_pos != null: #Already pressed, we update the position anyways
+		mouse_pos = position

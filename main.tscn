@@ -1,18 +1,10 @@
-[gd_scene load_steps=17 format=3 uid="uid://qlmh4im4lm3e"]
+[gd_scene load_steps=16 format=3 uid="uid://qlmh4im4lm3e"]
 
 [ext_resource type="Script" path="res://controls/camera.gd" id="2_2uc2b"]
 [ext_resource type="Shader" path="res://fluidsim/shader/terrain_surface.gdshader" id="4_y0lmg"]
 [ext_resource type="Texture2D" uid="uid://c5ssf2pn0vh1d" path="res://dirt_floor_diff_4k.jpg" id="5_6xree"]
 [ext_resource type="Shader" path="res://fluidsim/shader/water_surface.gdshader" id="5_qkbso"]
 [ext_resource type="Script" path="res://fluidsim/gol.gd" id="6_ea1n8"]
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_vwu1t"]
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_8ki4g"]
-width = 2048
-height = 2048
-generate_mipmaps = false
-noise = SubResource("FastNoiseLite_vwu1t")
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tbyqg"]
 
@@ -23,10 +15,10 @@ generate_mipmaps = false
 noise = SubResource("FastNoiseLite_tbyqg")
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_7ayt4"]
-texture_rd_rid = RID(5936671300264028)
+texture_rd_rid = RID(2732647172284434)
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_cudi2"]
-texture_rd_rid = RID(5936662710329439)
+texture_rd_rid = RID(2732638582349828)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4te7w"]
 render_priority = 0
@@ -44,7 +36,7 @@ subdivide_width = 512
 subdivide_depth = 512
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_l4f3o"]
-texture_rd_rid = RID(5936662710329439)
+texture_rd_rid = RID(2732638582349828)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_45cfq"]
 render_priority = 0
@@ -60,22 +52,24 @@ size = Vector2(512, 512)
 subdivide_width = 512
 subdivide_depth = 512
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_wfkfs"]
+size = Vector3(512, 1, 512)
+
 [node name="Main" type="Node3D"]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(-0.0794594, 0.862372, -0.500001, -0.612373, 0.353554, 0.707106, 0.786566, 0.362373, 0.5, -0.18211, 90.3434, 0.141829)
+transform = Transform3D(-0.0794594, 0.862372, -0.500001, -0.612373, 0.353554, 0.707106, 0.786566, 0.362373, 0.5, -0.18211, 385.337, 0.141829)
 shadow_enabled = true
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.534691, 0.845048, 0, -0.845048, 0.534691, 0, 85.5342, 29.5872)
+transform = Transform3D(1, 0, 0, 0, 0.534691, 0.845048, 0, -0.845048, 0.534691, 0, 222.287, 239.145)
 script = ExtResource("2_2uc2b")
 
 [node name="Area3D" type="Area3D" parent="."]
 script = ExtResource("6_ea1n8")
 accelerate = true
-accel_factor = 20
+accel_factor = 10
 texture_size = Vector2i(128, 128)
-noise_water = SubResource("NoiseTexture2D_8ki4g")
 noise_terrain = SubResource("NoiseTexture2D_vlaij")
 
 [node name="WaterSurface" type="MeshInstance3D" parent="Area3D"]
@@ -89,3 +83,6 @@ sorting_offset = -5.0
 material_override = SubResource("ShaderMaterial_45cfq")
 mesh = SubResource("PlaneMesh_qx3r2")
 skeleton = NodePath("../..")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+shape = SubResource("BoxShape3D_wfkfs")

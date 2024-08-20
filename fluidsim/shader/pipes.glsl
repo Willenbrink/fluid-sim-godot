@@ -16,6 +16,10 @@ layout(set = 1, binding = 0, rgba32f) uniform image2D map_out;
 layout(set = 2, binding = 0, rgba32f) readonly restrict uniform image2D flux_in;
 layout(set = 3, binding = 0, rgba32f) readonly restrict uniform image2D flux_out;
 
+layout(push_constant, std430) uniform Params {
+	vec4 add_water_point;
+};
+
 vec4 map_cell(ivec2 cell_idx) {
     // ivec2 size = imageSize(map_in);
     return imageLoad(map_in, cell_idx);
@@ -32,7 +36,12 @@ float calc_height(ivec2 pos) {
     ivec2 d_dl = ivec2(-1, 1);
     ivec2 d_dr = ivec2(1, 1);
 
-    return flux(pos - d_r).r - flux(pos).r
+    float spawn = 0.0;
+    if(add_water_point.a != 0.0 && add_water_point.x == pos.x && add_water_point.y == pos.y)
+        spawn = 1.0;
+
+    return spawn
+        + flux(pos - d_r).r - flux(pos).r
         + flux(pos - d_d).g - flux(pos).g
         + flux(pos - d_dl).b - flux(pos).b
         + flux(pos - d_dr).a - flux(pos).a;

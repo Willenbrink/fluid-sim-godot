@@ -65,7 +65,8 @@ void fragment() {
 	else
 		ALBEDO = COLOR.xyz;
 	ALPHA = 1.0;
-	float threshold = 0.001;
+	float threshold = 0.003 - 2000000.0 * mag(flux) * mag(flux);
+	threshold = max(0.00000000001, threshold);
 	// TODO ideally: hard boundaries when delta water_height is large (FLUX?!)
 	// This gives smooth boundaries near streams (which are often only one cell)
 	// but hard ones around lakes

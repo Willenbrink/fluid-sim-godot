@@ -15,10 +15,8 @@ generate_mipmaps = false
 noise = SubResource("FastNoiseLite_tbyqg")
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_7ayt4"]
-texture_rd_rid = RID(2732647172284434)
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_cudi2"]
-texture_rd_rid = RID(2732638582349828)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4te7w"]
 render_priority = 0
@@ -36,7 +34,6 @@ subdivide_width = 512
 subdivide_depth = 512
 
 [sub_resource type="Texture2DRD" id="Texture2DRD_l4f3o"]
-texture_rd_rid = RID(2732638582349828)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_45cfq"]
 render_priority = 0

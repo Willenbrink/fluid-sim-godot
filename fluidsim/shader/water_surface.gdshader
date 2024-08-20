@@ -16,10 +16,10 @@ float mag(vec4 v) {
 	return sqrt(sq.x + sq.y + sq.z + sq.w);
 }
 
-vec3 calc_normal(vec2 uv) { 
+vec3 calc_normal(vec2 uv) {
     const vec3 off = vec3(-1,0,1);
     vec2 texelSize = 1.0 / vec2(textureSize(heightmap, 0));
-	
+
     float left = sum(texture(heightmap, uv + texelSize * off.xy).xy * heightscale);
     float right = sum(texture(heightmap, uv + texelSize * off.zy).xy * heightscale);
     float top = sum(texture(heightmap, uv + texelSize * off.yx).xy * heightscale);
@@ -34,7 +34,7 @@ varying vec4 flux;
 void vertex() {
 	vec4 height = texture(heightmap, UV);
 	flux = texture(fluxmap, UV);
-	
+
     VERTEX.y += height.y * heightscale;
 	if(energyvis) {
 		VERTEX.y += height.x * heightscale + mag(flux) * 10000.0;

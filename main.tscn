@@ -1,10 +1,9 @@
-[gd_scene load_steps=18 format=3 uid="uid://qlmh4im4lm3e"]
+[gd_scene load_steps=17 format=3 uid="uid://qlmh4im4lm3e"]
 
 [ext_resource type="Script" path="res://src/controls/camera.gd" id="2_2uc2b"]
 [ext_resource type="Shader" path="res://src/shader/terrain_surface.gdshader" id="4_y0lmg"]
 [ext_resource type="Texture2D" uid="uid://c5ssf2pn0vh1d" path="res://dirt_floor_diff_4k.jpg" id="5_6xree"]
 [ext_resource type="Shader" path="res://src/shader/water_surface.gdshader" id="5_qkbso"]
-[ext_resource type="Script" path="res://src/v_box_container.gd" id="6_3hyi2"]
 [ext_resource type="Script" path="res://src/fluidsim.gd" id="6_ea1n8"]
 [ext_resource type="Script" path="res://src/spin_box_fix.gd" id="7_vuo7j"]
 
@@ -89,7 +88,6 @@ shape = SubResource("BoxShape3D_wfkfs")
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 offset_right = 40.0
 offset_bottom = 40.0
-script = ExtResource("6_3hyi2")
 
 [node name="GridContainer" type="GridContainer" parent="VBoxContainer"]
 layout_mode = 2

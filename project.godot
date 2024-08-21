@@ -13,11 +13,14 @@ config_version=5
 config/name="CGI"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
-config/icon="res://icon.svg"
+
+[editor]
+
+movie_writer/movie_file="/home/sewi/Nextcloud/Studium/CGI/showcase.avi"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/object-inspector/plugin.cfg")
+enabled=PackedStringArray()
 
 [input]
 

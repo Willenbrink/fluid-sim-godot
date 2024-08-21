@@ -1,10 +1,12 @@
-[gd_scene load_steps=16 format=3 uid="uid://qlmh4im4lm3e"]
+[gd_scene load_steps=18 format=3 uid="uid://qlmh4im4lm3e"]
 
-[ext_resource type="Script" path="res://controls/camera.gd" id="2_2uc2b"]
-[ext_resource type="Shader" path="res://fluidsim/shader/terrain_surface.gdshader" id="4_y0lmg"]
+[ext_resource type="Script" path="res://src/controls/camera.gd" id="2_2uc2b"]
+[ext_resource type="Shader" path="res://src/shader/terrain_surface.gdshader" id="4_y0lmg"]
 [ext_resource type="Texture2D" uid="uid://c5ssf2pn0vh1d" path="res://dirt_floor_diff_4k.jpg" id="5_6xree"]
-[ext_resource type="Shader" path="res://fluidsim/shader/water_surface.gdshader" id="5_qkbso"]
-[ext_resource type="Script" path="res://fluidsim/gol.gd" id="6_ea1n8"]
+[ext_resource type="Shader" path="res://src/shader/water_surface.gdshader" id="5_qkbso"]
+[ext_resource type="Script" path="res://src/v_box_container.gd" id="6_3hyi2"]
+[ext_resource type="Script" path="res://src/fluidsim.gd" id="6_ea1n8"]
+[ext_resource type="Script" path="res://src/spin_box_fix.gd" id="7_vuo7j"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_tbyqg"]
 
@@ -62,31 +64,32 @@ shadow_enabled = true
 transform = Transform3D(1, 0, 0, 0, 0.534691, 0.845048, 0, -0.845048, 0.534691, 0, 222.287, 239.145)
 script = ExtResource("2_2uc2b")
 
-[node name="Area3D" type="Area3D" parent="."]
+[node name="Fluidsim" type="Area3D" parent="."]
 script = ExtResource("6_ea1n8")
 brush_water = 0.01
 texture_size = Vector2i(128, 128)
 noise_terrain = SubResource("NoiseTexture2D_vlaij")
 brush_size = 3
 
-[node name="WaterSurface" type="MeshInstance3D" parent="Area3D"]
+[node name="WaterSurface" type="MeshInstance3D" parent="Fluidsim"]
 material_override = SubResource("ShaderMaterial_4te7w")
 gi_mode = 2
 mesh = SubResource("PlaneMesh_mtqtp")
 skeleton = NodePath("../..")
 
-[node name="TerrainSurface" type="MeshInstance3D" parent="Area3D"]
+[node name="TerrainSurface" type="MeshInstance3D" parent="Fluidsim"]
 sorting_offset = -5.0
 material_override = SubResource("ShaderMaterial_45cfq")
 mesh = SubResource("PlaneMesh_qx3r2")
 skeleton = NodePath("../..")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Fluidsim"]
 shape = SubResource("BoxShape3D_wfkfs")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 offset_right = 40.0
 offset_bottom = 40.0
+script = ExtResource("6_3hyi2")
 
 [node name="GridContainer" type="GridContainer" parent="VBoxContainer"]
 layout_mode = 2
@@ -97,13 +100,13 @@ layout_mode = 2
 button_pressed = true
 text = "Run"
 
-[node name="Button" type="Button" parent="VBoxContainer/GridContainer"]
-layout_mode = 2
-text = "Single Step"
-
 [node name="Accelerate" type="CheckButton" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
 text = "Accelerate"
+
+[node name="Button" type="Button" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Single Step"
 
 [node name="Button2" type="Button" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
@@ -118,26 +121,29 @@ layout_mode = 2
 min_value = 1.0
 value = 10.0
 allow_greater = true
+script = ExtResource("7_vuo7j")
 
 [node name="Viscosity" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
-text = "Viscosity"
+text = "Flow Speed"
 
 [node name="viscosity" type="SpinBox" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
 max_value = 1000.0
 step = 0.01
 value = 0.1
+script = ExtResource("7_vuo7j")
 
 [node name="Decay" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
-text = "Decay"
+text = "Wave Decay"
 
 [node name="decay" type="SpinBox" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
 max_value = 1000.0
 step = 0.1
 value = 1.0
+script = ExtResource("7_vuo7j")
 
 [node name="Label3" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
@@ -148,6 +154,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 value = 0.05
+script = ExtResource("7_vuo7j")
 
 [node name="Label4" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
@@ -158,6 +165,7 @@ layout_mode = 2
 max_value = 1.0
 step = 0.001
 value = 0.01
+script = ExtResource("7_vuo7j")
 
 [node name="Label5" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
@@ -168,6 +176,7 @@ layout_mode = 2
 min_value = 1.0
 value = 3.0
 allow_greater = true
+script = ExtResource("7_vuo7j")
 
 [node name="Label6" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
@@ -179,6 +188,7 @@ max_value = 2048.0
 value = 128.0
 allow_greater = true
 allow_lesser = true
+script = ExtResource("7_vuo7j")
 
 [node name="Noise Seed" type="Label" parent="VBoxContainer/GridContainer"]
 layout_mode = 2
@@ -190,6 +200,7 @@ layout_mode = 2
 max_value = 0.0
 allow_greater = true
 allow_lesser = true
+script = ExtResource("7_vuo7j")
 
 [node name="Label2" type="Label" parent="VBoxContainer"]
 layout_mode = 2
@@ -199,15 +210,15 @@ Right mouse button controls the camera.
 Mouse wheel/Ctrl/Alt modify camera speed.
 Enjoy!"
 
-[connection signal="toggled" from="VBoxContainer/GridContainer/Run" to="Area3D" method="_on_run_toggled"]
-[connection signal="pressed" from="VBoxContainer/GridContainer/Button" to="Area3D" method="_on_button_pressed"]
-[connection signal="toggled" from="VBoxContainer/GridContainer/Accelerate" to="Area3D" method="_on_accelerate_toggled"]
-[connection signal="pressed" from="VBoxContainer/GridContainer/Button2" to="Area3D" method="_on_button_2_pressed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/AccelerationFactor" to="Area3D" method="_on_acceleration_factor_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/viscosity" to="Area3D" method="_on_viscosity_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/decay" to="Area3D" method="_on_decay_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/InitWater" to="Area3D" method="_on_init_water_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/BrushWater" to="Area3D" method="_on_brush_water_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/BrushRadius" to="Area3D" method="_on_brush_radius_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/SpinBox" to="Area3D" method="_on_spin_box_value_changed"]
-[connection signal="value_changed" from="VBoxContainer/GridContainer/NoiseSeed" to="Area3D" method="_on_noise_seed_value_changed"]
+[connection signal="toggled" from="VBoxContainer/GridContainer/Run" to="Fluidsim" method="_on_run_toggled"]
+[connection signal="toggled" from="VBoxContainer/GridContainer/Accelerate" to="Fluidsim" method="_on_accelerate_toggled"]
+[connection signal="pressed" from="VBoxContainer/GridContainer/Button" to="Fluidsim" method="_on_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/GridContainer/Button2" to="Fluidsim" method="_on_button_2_pressed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/AccelerationFactor" to="Fluidsim" method="_on_acceleration_factor_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/viscosity" to="Fluidsim" method="_on_viscosity_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/decay" to="Fluidsim" method="_on_decay_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/InitWater" to="Fluidsim" method="_on_init_water_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/BrushWater" to="Fluidsim" method="_on_brush_water_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/BrushRadius" to="Fluidsim" method="_on_brush_radius_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/SpinBox" to="Fluidsim" method="_on_spin_box_value_changed"]
+[connection signal="value_changed" from="VBoxContainer/GridContainer/NoiseSeed" to="Fluidsim" method="_on_noise_seed_value_changed"]

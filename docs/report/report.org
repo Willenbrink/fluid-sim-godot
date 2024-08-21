@@ -1,5 +1,5 @@
 #+title: Realtime Water Simulation using the Pipe Method
-#+author: Sebastian Willenbrink 19990601-7851
+#+author: Sebastian Willenbrink, 19990601-7851, {{{email}}}
 #+email: stwi@kth.se
 
 * Abstract

@@ -1,7 +1,7 @@
-@tool
+#@tool
 extends Area3D
 
-@export var run_in_editor = false;
+@export var run = true;
 @export var step : bool :
 	get: return false
 	set(_value):
@@ -15,7 +15,10 @@ extends Area3D
 		init()
 @export var accelerate = false;
 @export var accel_factor = 5;
+@export var viscosity = 0.1;
+@export var decay = 1.0;
 @export var water_initial_height = 0.05;
+@export var brush_water = 0.2;
 
 var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://fluidsim/shader/flux.glsl")
@@ -46,9 +49,9 @@ var uniform_set_flux_out
 var image_format := Image.FORMAT_RGBAF
 var data_format := RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
 
-var mouse_pos = null
-var fill_water = true
-var brush_size = 3
+var mouse_pos = Vector3(0, 0, 0)
+var fill_water = 0
+@export var brush_size = 1
 
 func _ready() -> void:
 	# Data for compute shaders has to come as an array of bytes
@@ -155,30 +158,27 @@ func free() -> void:
 
 func _process(_delta: float) -> void:
 	#place_fluid()
-	if (not Engine.is_editor_hint() || run_in_editor):
+	if (run):
 		process_real()
 
 func process_real():
 	# Based on https://github.com/godotengine/godot-demo-projects/blob/4.2-31d1c0c/compute/texture/water_plane/water_plane.gd
-	var push_constant : PackedFloat32Array = PackedFloat32Array()
-	if(mouse_pos != null):
-		var u : int = (mouse_pos.x + 512 / 2) / 512 * texture_size.x;
-		var v : int = (mouse_pos.z + 512 / 2) / 512 * texture_size.y;
-		push_constant.push_back(u)
-		push_constant.push_back(v)
-		push_constant.push_back(0.0)
-		push_constant.push_back(1.0)
-	else:
-		push_constant.push_back(0.0)
-		push_constant.push_back(0.0)
-		push_constant.push_back(0.0)
-		push_constant.push_back(0.0)
-		#image_height.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
-	RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1, push_constant))
-	#texture_water.texture_rd_rid = tex_height_A
-	#texture_terrain.texture_rd_rid = tex_height_A
+	var flux_params : PackedFloat32Array = PackedFloat32Array()
+	flux_params.push_back(viscosity)
+	flux_params.push_back(decay)
+	flux_params.push_back(0.0)
+	flux_params.push_back(0.0)
+	
+	var pipes_params : PackedFloat32Array = PackedFloat32Array()
+	var u : int = (mouse_pos.x + 512 / 2) / 512 * texture_size.x;
+	var v : int = (mouse_pos.z + 512 / 2) / 512 * texture_size.y;
+	pipes_params.push_back(u)
+	pipes_params.push_back(v)
+	pipes_params.push_back(brush_size)
+	pipes_params.push_back(brush_water if fill_water == 1 else -brush_water if fill_water == 2 else 0.0)
+	RenderingServer.call_on_render_thread(compute.bind(accel_factor if accelerate else 1, flux_params, pipes_params))
 
-func compute(num_iter, push_constant) -> void:
+func compute(num_iter, flux_params, pipes_params) -> void:
 	for n in num_iter:
 		# Process:
 		# list begin: Start compute list to start recording our compute commands
@@ -193,6 +193,7 @@ func compute(num_iter, push_constant) -> void:
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_height_out, 1)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_in, 2)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_out, 3)
+		rd.compute_list_set_push_constant(compute_list, flux_params.to_byte_array(), flux_params.size() * 4)
 		rd.compute_list_dispatch(compute_list, texture_size.x, texture_size.y, 1)
 		
 		rd.compute_list_add_barrier(compute_list)
@@ -202,7 +203,7 @@ func compute(num_iter, push_constant) -> void:
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_height_out, 1)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_in, 2)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_set_flux_out, 3)
-		rd.compute_list_set_push_constant(compute_list, push_constant.to_byte_array(), push_constant.size() * 4)
+		rd.compute_list_set_push_constant(compute_list, pipes_params.to_byte_array(), pipes_params.size() * 4)
 		rd.compute_list_dispatch(compute_list, texture_size.x, texture_size.y, 1)
 		rd.compute_list_end()
 		
@@ -214,9 +215,61 @@ func compute(num_iter, push_constant) -> void:
 		uniform_set_height_out = height_tmp
 	
 func _input_event(camera, event, position, normal, shape_idx):
-	if event is InputEventMouseButton and (
-		event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT):
-		mouse_pos = position if event.pressed else null
-		fill_water = event.button_index == MOUSE_BUTTON_LEFT
-	elif mouse_pos != null: #Already pressed, we update the position anyways
-		mouse_pos = position
+	mouse_pos = position
+	event.is_pressed()
+	if event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
+		fill_water = 1
+	elif event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_MIDDLE:
+		fill_water = 2
+	if event is InputEventMouseButton and event.is_released() and (event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_MIDDLE):
+		fill_water = 0
+
+func _on_button_pressed() -> void:
+	step = true
+
+
+func _on_button_2_pressed() -> void:
+	reset = true
+
+
+func _on_init_water_value_changed(value: float) -> void:
+	water_initial_height = value
+
+
+func _on_brush_water_value_changed(value: float) -> void:
+	brush_water = value
+
+
+func _on_brush_radius_value_changed(value: float) -> void:
+	brush_size = value
+
+
+func _on_acceleration_factor_value_changed(value: float) -> void:
+	accel_factor = value
+
+
+func _on_accelerate_toggled(toggled_on: bool) -> void:
+	accelerate = true
+
+
+func _on_run_toggled(toggled_on: bool) -> void:
+	run = toggled_on
+
+
+func _on_noise_seed_value_changed(value: float) -> void:
+	noise_terrain.noise.seed = value
+
+
+func _on_spin_box_value_changed(value: float) -> void:
+	texture_size.x = value
+	texture_size.y = value
+	noise_terrain.width = value
+	noise_terrain.height = value
+
+
+func _on_viscosity_value_changed(value: float) -> void:
+	viscosity = value
+
+
+func _on_decay_value_changed(value: float) -> void:
+	decay = value

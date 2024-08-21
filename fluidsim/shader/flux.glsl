@@ -16,6 +16,18 @@ layout(set = 1, binding = 0, rgba32f) readonly restrict uniform image2D map_out;
 layout(set = 2, binding = 0, rgba32f) readonly restrict uniform image2D flux_in;
 layout(set = 3, binding = 0, rgba32f) uniform image2D flux_out;
 
+layout(push_constant, std430) uniform Params {
+// X - Viscosity
+    // A value of 1.0 that the whole difference is added to the current flux
+    // A lower value represents a slower liquid, similar to viscosity (though not the same)
+// Y - Decay
+    // Decay of previous flux. 0.0 means no decay, 1.0 maximal decay
+    // In the simulation, waves can annihilate each other and so the water will calm even without decay.
+// Z -
+// A -
+	vec4 params;
+};
+
 float height_total(ivec2 cell_idx) {
     // ivec2 size = imageSize(map_in);
     vec4 map = imageLoad(map_in, cell_idx);
@@ -44,32 +56,14 @@ vec4 calc_flux(ivec2 pos) {
     ivec2 d_dl = ivec2(-1, 1);
     ivec2 d_dr = ivec2(1, 1);
 
-    // A value of 1.0 that the whole difference is added to the current flux
-    // A lower value represents a slower liquid, similar to viscosity (though not the same)
-    float viscos = 0.00001;
-    // Decay of previous flux. Not necessary after all.
-    // In a correct simulation waves can annihilate each other and so waters will calm even without decay.
-    float d = 1.0;
-    d = 0.9999;
+    // The values shown in the UI are scaled because its hard to count zeros in e.g. 0.00001
+    float viscos = params.x / 1000.0;
+    float d = 1.0 - (params.y / 1000.0);
+
     float flux_r = d * flux(pos).r + viscos * (h_t - height_total(pos + d_r));
     float flux_d = d * flux(pos).g + viscos * (h_t - height_total(pos + d_d));
     float flux_dl = d * flux(pos).b + viscos * (h_t - height_total(pos + d_dl)) / 1.41;
     float flux_dr = d * flux(pos).a + viscos * (h_t - height_total(pos + d_dr)) / 1.41;
-
-    // float inflow = max(flux_r, 0.0) + max(flux_d, 0.0) + max(flux_dl, 0.0) + max(flux_dr, 0.0);
-    // float outflow = min(flux_r, 0.0) + min(flux_d, 0.0) + min(flux_dl, 0.0) + min(flux_dr, 0.0);
-    // float h_w_out = h_w + outflow;
-
-    // if(h_w_out < 0.0) {
-    //     if(flux_r < 0.0)
-    //         flux_r *= h_w / outflow;
-    //     if(flux_d < 0.0)
-    //         flux_d *= h_w / outflow;
-    //     if(flux_dl < 0.0)
-    //         flux_dl *= h_w / outflow;
-    //     if(flux_dr < 0.0)
-    //         flux_dr *= h_w / outflow;
-    // }
 
 
     float sqrt2_inv = 1.0 / 1.41;
@@ -88,30 +82,15 @@ vec4 calc_flux(ivec2 pos) {
     // This latter form is the one used here
     flux_r = min(height_water(pos) / num_pipes, flux_r);
     flux_r = - min(height_water(pos + d_r) / num_pipes, -flux_r);
-    // flux_r = max((-1.0 + height(pos + d_r)) / num_pipes, flux_r);
-    // flux_r = min(( 1.0 - height(pos)) / num_pipes, flux_r);
 
     flux_d = min(height_water(pos) / num_pipes, flux_d);
     flux_d = - min(height_water(pos + d_d) / num_pipes, -flux_d);
-    // flux_d = max((-1.0 + height(pos + d_d)) / num_pipes, flux_d);
-    // flux_d = min(( 1.0 - height(pos)) / num_pipes, flux_d);
 
     flux_dl = min(height_water(pos) / num_pipes * sqrt2_inv, flux_dl);
     flux_dl = - min(height_water(pos + d_dl) / num_pipes * sqrt2_inv, -flux_dl);
-    // flux_dl = max((-1.0 + height(pos + d_dl)) / num_pipes, flux_dl);
-    // flux_dl = min(( 1.0 - height(pos)) / num_pipes, flux_dl);
 
     flux_dr = min(height_water(pos) / num_pipes * sqrt2_inv, flux_dr);
     flux_dr = - min(height_water(pos + d_dr) / num_pipes * sqrt2_inv, -flux_dr);
-    // flux_dr = max((-1.0 + height(pos + d_dr)) / num_pipes, flux_dr);
-    // flux_dr = min(( 1.0 - height(pos)) / num_pipes, flux_dr);
-
-    // TODO experiment: Dampen extreme fluxes, hopefully equivalent to a low-pass on the frequency of the waves
-    // float exp = 0;
-    // flux_r *= pow(1-abs(flux_r), exp);
-    // flux_d *= pow(1-abs(flux_d), exp);
-    // flux_dl *= pow(1-abs(flux_dl), exp);
-    // flux_dr *= pow(1-abs(flux_dr), exp);
 
     return vec4(flux_r, flux_d, flux_dl, flux_dr);
 }

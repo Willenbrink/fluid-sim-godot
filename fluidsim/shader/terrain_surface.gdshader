@@ -5,10 +5,10 @@ uniform float heightscale;
 uniform sampler2D heightmap;
 uniform sampler2D texturemap;
 
-vec3 calc_normal(vec2 uv) { 
+vec3 calc_normal(vec2 uv) {
     const vec3 off = vec3(-1,0,1);
     vec2 texelSize = 1.0 / vec2(textureSize(heightmap, 0));
-	
+
     float left = texture(heightmap, uv + texelSize * off.xy).y * heightscale;
     float right = texture(heightmap, uv + texelSize * off.zy).y * heightscale;
     float top = texture(heightmap, uv + texelSize * off.yx).y * heightscale;

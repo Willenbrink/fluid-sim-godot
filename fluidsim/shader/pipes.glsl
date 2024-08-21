@@ -17,7 +17,11 @@ layout(set = 2, binding = 0, rgba32f) readonly restrict uniform image2D flux_in;
 layout(set = 3, binding = 0, rgba32f) readonly restrict uniform image2D flux_out;
 
 layout(push_constant, std430) uniform Params {
-	vec4 add_water_point;
+    // X - Position x
+    // Y - Position y
+    // Z - Brush size
+    // A - Amount
+	vec4 add_water;
 };
 
 vec4 map_cell(ivec2 cell_idx) {
@@ -36,15 +40,15 @@ float calc_height(ivec2 pos) {
     ivec2 d_dl = ivec2(-1, 1);
     ivec2 d_dr = ivec2(1, 1);
 
-    float spawn = 0.0;
-    if(add_water_point.a != 0.0 && add_water_point.x == pos.x && add_water_point.y == pos.y)
-        spawn = 1.0;
-
-    return spawn
+    float sum =
         + flux(pos - d_r).r - flux(pos).r
         + flux(pos - d_d).g - flux(pos).g
         + flux(pos - d_dl).b - flux(pos).b
         + flux(pos - d_dr).a - flux(pos).a;
+
+    if(distance(pos.xy, add_water.xy) <= add_water.z)
+        return sum + add_water.a;
+    return sum;
 }
 
 vec4 calc_cell(ivec2 pos) {

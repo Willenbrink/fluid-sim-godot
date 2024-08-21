@@ -20,6 +20,18 @@ extends Area3D
 @export var water_initial_height = 0.05;
 @export var brush_water = 0.2;
 
+@export var height_threshold : float :
+	get: return height_threshold
+	set(value):
+		height_threshold = value
+		$WaterSurface.material_override.set_shader_parameter("height_threshold", value)
+		
+@export var flux_enhancer : float :
+	get: return flux_enhancer
+	set(value):
+		flux_enhancer = value
+		$WaterSurface.material_override.set_shader_parameter("flux_enhancer", value)
+
 var rd: RenderingDevice
 var flux_shader_file: RDShaderFile = preload("res://src/shader/flux.glsl")
 var height_shader_file: RDShaderFile = preload("res://src/shader/pipes.glsl")
@@ -276,3 +288,11 @@ func _on_viscosity_value_changed(value: float) -> void:
 
 func _on_decay_value_changed(value: float) -> void:
 	decay = value
+
+
+func _on_height_threshold_value_changed(value: float) -> void:
+	height_threshold = value / 1000.0
+
+
+func _on_river_magnifier_value_changed(value: float) -> void:
+	flux_enhancer = value * 1000.0

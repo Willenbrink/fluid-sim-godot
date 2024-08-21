@@ -6,6 +6,8 @@ uniform vec4 color;
 uniform float heightscale;
 uniform sampler2D heightmap;
 uniform sampler2D fluxmap;
+uniform float height_threshold;
+uniform float flux_enhancer;
 
 float sum(vec2 xy) {
 	return xy.x + xy.y;
@@ -66,6 +68,7 @@ void fragment() {
 		ALBEDO = COLOR.xyz;
 	ALPHA = 1.0;
 	float threshold = 0.003 - 2000000.0 * mag(flux) * mag(flux);
+	threshold = height_threshold - flux_enhancer * mag(flux) * mag(flux);
 	threshold = max(0.00000000001, threshold);
 	// TODO ideally: hard boundaries when delta water_height is large (FLUX?!)
 	// This gives smooth boundaries near streams (which are often only one cell)
